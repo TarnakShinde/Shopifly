@@ -1,0 +1,332 @@
+"use client";
+
+import Link from "next/link";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import {
+    Heart,
+    Search,
+    ShoppingBag,
+    CircleUserRound,
+    House,
+} from "lucide-react";
+import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import { ToastContainer, toast } from "react-toastify";
+import { logoutAction } from "../logout/actions";
+import { createClient } from "../../utils/supabase/client";
+
+const Navbar = () => {
+    const notify = () =>
+        toast.success("Registration Successful", {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: true,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+        });
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [isClick, setIsClick] = useState(false);
+    const router = useRouter();
+    const searchField = useRef(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const [user, setUser] = useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
+
+    const supabase = createClient();
+
+    const open = Boolean(anchorEl);
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+    const handleSearch = async (e) => {
+        const value = e.target.value;
+        setQuery(value);
+
+        if (value.length > 0) {
+            try {
+                const res = await fetch(`/api/search?query=${value}`);
+                if (!res.ok)
+                    throw new Error(
+                        `Network response was not ok: ${res.status}`
+                    );
+                const data = await res.json();
+                setResults(data);
+                setIsOpen(true);
+            } catch (error) {
+                console.error("Error fetching search results:", error);
+                setResults([]);
+                setIsOpen(true);
+            }
+        } else {
+            setResults([]);
+            setIsOpen(false);
+        }
+    };
+
+    const handleProductClick = (productId) => {
+        router.push(`/product/${productId}`);
+        setQuery("");
+        setResults([]);
+        setIsOpen(false);
+    };
+    const toggleNavbar = () => {
+        setIsClick(!isClick);
+    };
+    useEffect(() => {
+        async function getUser() {
+            const {
+                data: { user },
+            } = await supabase.auth.getUser();
+            setUser(user);
+        }
+        getUser();
+        // Set up auth state change listener
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((event, session) => {
+            setUser(session?.user || null);
+        });
+        return () => subscription.unsubscribe();
+    }, [supabase]);
+    return (
+        <>
+            <nav className="bg-black">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        {/* Logo Section */}
+                        <div className="flex-shrink-0">
+                            <Link
+                                href="/"
+                                className="lg:text-2xl md:text-xl sm:text-base text-white font-bold"
+                            >
+                                SHOPI
+                                <span className="text-green-500">FLY</span>
+                            </Link>
+                        </div>
+
+                        {/* Search Bar Section */}
+                        <div className="flex-grow flex items-center justify-center">
+                            <div className="mt-1 flex items-center relative">
+                                <div className="relative w-full md:w-[300px] sm:w-[100px]  mx-auto">
+                                    <div className="">
+                                        <input
+                                            type="text"
+                                            value={query}
+                                            onChange={handleSearch}
+                                            placeholder="Search Anything.."
+                                            className="sm:w-[100px] w-full md:w-[300px] p-2 font-mono rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 py-3 px-4"
+                                            ref={searchField}
+                                        />
+                                        <Search className="absolute right-3 bottom-3.5 w-5 h-5 text-gray-600 hover:text-gray-400 " />
+                                    </div>
+
+                                    {/* Suggestions Dropdown */}
+                                    {isOpen && results.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[400px] overflow-y-auto">
+                                            {results.map((result) => (
+                                                <div
+                                                    key={result.uniq_id}
+                                                    onClick={() =>
+                                                        handleProductClick(
+                                                            result.uniq_id
+                                                        )
+                                                    }
+                                                    className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-none"
+                                                >
+                                                    <div className="w-12 h-12 flex-shrink-0 bg-gray-50 rounded overflow-hidden">
+                                                        <img
+                                                            src={result.image1}
+                                                            alt={
+                                                                result.product_name
+                                                            }
+                                                            className="w-full h-full object-contain"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm text-gray-900 truncate">
+                                                            {
+                                                                result.product_name
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Links Section */}
+                        <div className="hidden md:block">
+                            <div className="flex items-center space-x-4">
+                                <Link
+                                    href="/"
+                                    className="text-white hover:bg-white hover:text-black rounded-lg p-2"
+                                >
+                                    <House />
+                                </Link>
+                                <Link
+                                    href="/"
+                                    className="text-white hover:bg-white hover:text-black rounded-lg p-2"
+                                >
+                                    <Heart />
+                                </Link>
+                                <Link
+                                    href="/cart"
+                                    className="text-white hover:bg-white hover:text-black rounded-lg p-2"
+                                >
+                                    <ShoppingBag />
+                                </Link>
+                                <div className="text-white hover:bg-white hover:text-black rounded-lg p-2">
+                                    <div
+                                        id="basic-button"
+                                        aria-controls={
+                                            open ? "basic-menu" : undefined
+                                        }
+                                        aria-haspopup="true"
+                                        aria-expanded={
+                                            open ? "true" : undefined
+                                        }
+                                        onClick={handleClick}
+                                    >
+                                        <CircleUserRound />
+                                    </div>
+                                    <Menu
+                                        id="basic-menu"
+                                        anchorEl={anchorEl}
+                                        open={open}
+                                        onClose={handleClose}
+                                        // MenuListProps={{
+                                        //     "aria-labelledby": "basic-button",
+                                        // }}
+                                    >
+                                        <MenuItem onClick={handleClose}>
+                                            {user ? (
+                                                <button
+                                                    onClick={() => {
+                                                        logoutAction();
+                                                        notify();
+                                                    }}
+                                                >
+                                                    Logout
+                                                </button>
+                                            ) : (
+                                                <>
+                                                    <Link href="/login">
+                                                        Login
+                                                    </Link>
+                                                </>
+                                            )}
+                                        </MenuItem>
+                                    </Menu>
+                                </div>
+                            </div>
+                        </div>
+                        {/* <ToastContainer /> */}
+                        {/* Mobile Menu Button */}
+                        <div className="md:hidden flex items-center">
+                            <button
+                                className="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                                onClick={toggleNavbar}
+                                aria-expanded={isClick}
+                                aria-controls="mobile-menu"
+                            >
+                                {isClick ? (
+                                    <svg
+                                        className="h-6 w-6"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M6 18L18 6M6 6l12 12"
+                                        />
+                                    </svg>
+                                ) : (
+                                    <svg
+                                        className="h-6 w-6"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M4 6h16M4 12h16m-7 6h7"
+                                        />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Menu */}
+                {isClick && (
+                    <div id="mobile-menu" className="md:hidden">
+                        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 flex flex-col items-center text-center sm:mx-auto">
+                            <Link
+                                href="/"
+                                className="text-white hover:bg-white hover:text-black rounded-lg p-2 w-full text-center flex gap-2"
+                                onClick={() => setIsClick(false)}
+                            >
+                                <House size={25} />{" "}
+                                <span className="text-xl font-semibold">
+                                    Home
+                                </span>
+                            </Link>
+                            <Link
+                                href="/"
+                                className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
+                                onClick={() => setIsClick(false)}
+                            >
+                                <Heart size={25} />
+                                <span className="text-xl font-semibold">
+                                    Favourite
+                                </span>
+                            </Link>
+                            <Link
+                                href="/"
+                                className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
+                                onClick={() => setIsClick(false)}
+                            >
+                                <ShoppingBag size={25} />
+                                <span className="text-xl font-semibold">
+                                    Cart
+                                </span>
+                            </Link>
+                            <Link
+                                href="/"
+                                className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
+                                onClick={() => setIsClick(false)}
+                            >
+                                <CircleUserRound size={25} />
+                                <span className="text-xl font-semibold">
+                                    Profile
+                                </span>
+                            </Link>
+                        </div>
+                    </div>
+                )}
+            </nav>
+        </>
+    );
+};
+
+export default Navbar;
