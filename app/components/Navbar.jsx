@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     Heart,
@@ -14,16 +14,17 @@ import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Added import for toast styling
 import { logoutAction } from "../logout/actions";
 import { createClient } from "../../utils/supabase/client";
 
 const Navbar = () => {
-    const notify = () =>
-        toast.success("Registration Successful", {
+    const notify = (message) =>
+        toast.success(message, {
             position: "top-right",
             autoClose: 5000,
             hideProgressBar: true,
-            closeOnClick: false,
+            closeOnClick: true,
             pauseOnHover: true,
             draggable: true,
             progress: undefined,
@@ -78,9 +79,26 @@ const Navbar = () => {
         setResults([]);
         setIsOpen(false);
     };
+
     const toggleNavbar = () => {
         setIsClick(!isClick);
     };
+
+    const handleCartClick = () => {
+        if (!user) {
+            toast.warning("Please login or signup to access your cart", {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+            return false;
+        }
+        return true;
+    };
+
     useEffect(() => {
         async function getUser() {
             const {
@@ -94,9 +112,48 @@ const Navbar = () => {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user || null);
+
+            // Show login/logout notifications
+            if (event === "SIGNED_IN") {
+                notify("Successfully logged in");
+            } else if (event === "SIGNED_OUT") {
+                notify("Successfully logged out");
+            }
         });
         return () => subscription.unsubscribe();
     }, [supabase]);
+
+    // Prepare menu items based on user authentication state
+    const menuItems = user
+        ? [
+              <MenuItem key="profile" onClick={handleClose}>
+                  <Link href="/private" className="w-full block">
+                      Profile
+                  </Link>
+              </MenuItem>,
+              <MenuItem
+                  key="logout"
+                  onClick={() => {
+                      handleClose();
+                      logoutAction();
+                  }}
+              >
+                  Logout
+              </MenuItem>,
+          ]
+        : [
+              <MenuItem key="login" onClick={handleClose}>
+                  <Link href="/login" className="w-full block">
+                      Login
+                  </Link>
+              </MenuItem>,
+              <MenuItem key="signup" onClick={handleClose}>
+                  <Link href="/signup" className="w-full block">
+                      Signup
+                  </Link>
+              </MenuItem>,
+          ];
+
     return (
         <>
             <nav className="bg-black">
@@ -176,7 +233,7 @@ const Navbar = () => {
                                     <House />
                                 </Link>
                                 <Link
-                                    href="/"
+                                    href="/favorites"
                                     className="text-white hover:bg-white hover:text-black rounded-lg p-2"
                                 >
                                     <Heart />
@@ -184,6 +241,11 @@ const Navbar = () => {
                                 <Link
                                     href="/cart"
                                     className="text-white hover:bg-white hover:text-black rounded-lg p-2"
+                                    onClick={(e) => {
+                                        if (!handleCartClick()) {
+                                            e.preventDefault();
+                                        }
+                                    }}
                                 >
                                     <ShoppingBag />
                                 </Link>
@@ -198,6 +260,7 @@ const Navbar = () => {
                                             open ? "true" : undefined
                                         }
                                         onClick={handleClick}
+                                        className="cursor-pointer"
                                     >
                                         <CircleUserRound />
                                     </div>
@@ -206,33 +269,16 @@ const Navbar = () => {
                                         anchorEl={anchorEl}
                                         open={open}
                                         onClose={handleClose}
-                                        // MenuListProps={{
-                                        //     "aria-labelledby": "basic-button",
-                                        // }}
+                                        MenuListProps={{
+                                            "aria-labelledby": "basic-button",
+                                        }}
                                     >
-                                        <MenuItem onClick={handleClose}>
-                                            {user ? (
-                                                <button
-                                                    onClick={() => {
-                                                        logoutAction();
-                                                        notify();
-                                                    }}
-                                                >
-                                                    Logout
-                                                </button>
-                                            ) : (
-                                                <>
-                                                    <Link href="/login">
-                                                        Login
-                                                    </Link>
-                                                </>
-                                            )}
-                                        </MenuItem>
+                                        {menuItems}
                                     </Menu>
                                 </div>
                             </div>
                         </div>
-                        {/* <ToastContainer /> */}
+                        <ToastContainer />
                         {/* Mobile Menu Button */}
                         <div className="md:hidden flex items-center">
                             <button
@@ -292,35 +338,79 @@ const Navbar = () => {
                                 </span>
                             </Link>
                             <Link
-                                href="/"
+                                href="/favorites"
                                 className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
                                 onClick={() => setIsClick(false)}
                             >
                                 <Heart size={25} />
                                 <span className="text-xl font-semibold">
-                                    Favourite
+                                    Favorite
                                 </span>
                             </Link>
                             <Link
-                                href="/"
+                                href="/cart"
                                 className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
-                                onClick={() => setIsClick(false)}
+                                onClick={(e) => {
+                                    if (!handleCartClick()) {
+                                        e.preventDefault();
+                                    }
+                                    setIsClick(false);
+                                }}
                             >
                                 <ShoppingBag size={25} />
                                 <span className="text-xl font-semibold">
                                     Cart
                                 </span>
                             </Link>
-                            <Link
-                                href="/"
-                                className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
-                                onClick={() => setIsClick(false)}
-                            >
-                                <CircleUserRound size={25} />
-                                <span className="text-xl font-semibold">
-                                    Profile
-                                </span>
-                            </Link>
+                            {user ? (
+                                <>
+                                    <Link
+                                        href="/profile"
+                                        className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
+                                        onClick={() => setIsClick(false)}
+                                    >
+                                        <CircleUserRound size={25} />
+                                        <span className="text-xl font-semibold">
+                                            Profile
+                                        </span>
+                                    </Link>
+                                    <button
+                                        onClick={() => {
+                                            logoutAction();
+                                            setIsClick(false);
+                                        }}
+                                        className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
+                                    >
+                                        <span className="text-xl font-semibold">
+                                            Logout
+                                        </span>
+                                    </button>
+                                </>
+                            ) : (
+                                [
+                                    <Link
+                                        key="login"
+                                        href="/login"
+                                        className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
+                                        onClick={() => setIsClick(false)}
+                                    >
+                                        <CircleUserRound size={25} />
+                                        <span className="text-xl font-semibold">
+                                            Login
+                                        </span>
+                                    </Link>,
+                                    <Link
+                                        key="signup"
+                                        href="/signup"
+                                        className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
+                                        onClick={() => setIsClick(false)}
+                                    >
+                                        <span className="text-xl font-semibold">
+                                            Sign Up
+                                        </span>
+                                    </Link>,
+                                ]
+                            )}
                         </div>
                     </div>
                 )}

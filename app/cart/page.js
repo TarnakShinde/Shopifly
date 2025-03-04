@@ -25,10 +25,10 @@ const Cart = () => {
     return (
         <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
             <h2 className="text-2xl font-bold mb-6">Your Cart</h2>
-            {cart.map((item) => (
+            {cart.map((item, index) => (
                 <div
-                    key={item.unique_id}
                     className="flex items-center justify-between border-b py-4"
+                    key={index}
                 >
                     <div className="flex items-center space-x-4">
                         <Image
@@ -61,7 +61,7 @@ const Cart = () => {
                                         item.quantity - 1
                                     )
                                 }
-                                disabled={item.quantity <= 1}
+                                // disabled={item.quantity <= 1}
                                 className="p-2 disabled:opacity-50"
                             >
                                 <Minus size={16} />

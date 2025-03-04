@@ -1,67 +1,72 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export async function updateSession(request) {
-    let supabaseResponse = NextResponse.next({
-        request,
-    });
+    const cookieStore = await cookies(); // Ensure cookies are awaited
 
+    // Create Supabase client with proper session handling
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         {
             cookies: {
-                getAll() {
-                    return request.cookies.getAll();
+                async get(name) {
+                    const cookie = await cookieStore.get(name);
+                    return cookie?.value || "";
                 },
-                setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        request.cookies.set(name, value)
-                    );
-                    supabaseResponse = NextResponse.next({
-                        request,
-                    });
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        supabaseResponse.cookies.set(name, value, options)
-                    );
+                async set(name, value, options) {
+                    await cookieStore.set({ name, value, ...options });
+                },
+                async remove(name, options) {
+                    await cookieStore.set({ name, value: "", ...options });
                 },
             },
         }
     );
 
-    // Do not run code between createServerClient and
-    // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-    // issues with users being randomly logged out.
+    // Refresh the session
+    const {
+        data: { session },
+        error,
+    } = await supabase.auth.getSession();
 
-    // IMPORTANT: DO NOT REMOVE auth.getUser()
+    if (error) {
+        console.error("Error fetching session:", error.message);
+    }
 
+    // Retrieve user session
     const {
         data: { user },
     } = await supabase.auth.getUser();
 
+    // Allow browsing without login
+    if (user) {
+        return NextResponse.next();
+    }
+
+    // Restrict adding to cart without login
     if (
-        !user &&
-        !request.nextUrl.pathname.startsWith("/login") &&
-        !request.nextUrl.pathname.startsWith("/auth")
+        request.nextUrl.pathname.includes("/cart") ||
+        (request.nextUrl.pathname.includes("/api/cart") &&
+            (request.method === "POST" || request.method === "PUT"))
     ) {
-        // no user, potentially respond by redirecting the user to the login page
-        const url = request.nextUrl.clone();
-        url.pathname = "/login";
+        if (request.nextUrl.pathname.startsWith("/cart")) {
+            return NextResponse.json(
+                { error: "Login required to add items to cart" },
+                { status: 401 }
+            );
+        }
+
+        // Redirect to login page with return URL
+        const url = new URL("/login", request.nextUrl.origin);
+        url.searchParams.set("redirect", request.nextUrl.pathname);
         return NextResponse.redirect(url);
     }
 
-    // IMPORTANT: You *must* return the supabaseResponse object as it is.
-    // If you're creating a new response object with NextResponse.next() make sure to:
-    // 1. Pass the request in it, like so:
-    //    const myNewResponse = NextResponse.next({ request })
-    // 2. Copy over the cookies, like so:
-    //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-    // 3. Change the myNewResponse object to fit your needs, but avoid changing
-    //    the cookies!
-    // 4. Finally:
-    //    return myNewResponse
-    // If this is not done, you may be causing the browser and server to go out
-    // of sync and terminate the user's session prematurely!
-
-    return supabaseResponse;
+    return NextResponse.next();
 }
+
+export const config = {
+    matcher: ["/cart", "/api/cart"], // Apply middleware only to cart-related routes
+};

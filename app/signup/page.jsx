@@ -1,10 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
-import { Eye } from "lucide-react";
-import { EyeOff } from "lucide-react";
-import { error, success } from "../../utils/toastify";
-import bcrypt from "bcryptjs";
+import { Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { createClient } from "../../utils/supabase/client";
 
 const strengthLabels = ["weak", "medium", "medium", "strong"];
@@ -13,18 +11,22 @@ const SignUp = () => {
     const [email, setEmail] = useState("");
     const [userName, setUserName] = useState("");
     const [password, setPassword] = useState("");
-    const [age, setAge] = useState();
-    const [gender, setGender] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [strength, setStrength] = useState("");
     const [passwordError, setPasswordError] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const router = useRouter();
     const supabase = createClient();
 
-    const notifySuccess = () => success("Registration Successful");
-    const notifyError = () => error("Password Do Not Match");
+    // Get the redirect path from sessionStorage (set by our auth redirect hook)
+    const getRedirectPath = () => {
+        if (typeof window !== "undefined") {
+            return sessionStorage.getItem("redirectAfterAuth") || "/";
+        }
+        return "/";
+    };
 
     const getStrength = (password) => {
         let strengthIndicator = -1;
@@ -40,94 +42,63 @@ const SignUp = () => {
     const handleChange = (event) => {
         setStrength(getStrength(event.target.value));
     };
+
     //To toggle the password visibility
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
     };
+
     //To check the password and confirm password are same
     const validatePassword = () => {
         return password === confirmPassword;
     };
+
     // To handle the form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setPasswordError("");
+
         if (!validatePassword()) {
             setPasswordError("Passwords do not match");
             return;
         }
+
         try {
             setLoading(true);
-            // Hash the password for our custom storage
-            const salt = await bcrypt.genSalt(12);
-            const hashedPassword = await bcrypt.hash(password, salt);
 
-            // 1. Sign up with Supabase Auth
-            const { data: authData, error: authError } =
-                await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: {
-                            username: userName,
-                        },
+            // 1. Sign up with Supabase Auth - this will handle both auth and profile
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        username: userName,
                     },
-                });
+                },
+            });
 
-            if (authError) throw authError;
-            console.log("Auth signup successful, user data:", authData.user);
+            if (error) throw error;
 
-            // 2. Sign in immediately after signup to get a valid session
-            const { data: signInData, error: signInError } =
-                await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
-
-            if (signInError) throw signInError;
-            console.log("Sign-in successful, session established");
-
-            // Make sure we have a valid user ID before proceeding
-            const userId = authData.user.id;
-            if (!userId) {
-                throw new Error("User ID is missing after authentication");
-            }
-
-            // 3. Now that we're authenticated, insert into profiles table with explicit logging
-            console.log("Attempting to create profile for user ID:", userId);
-            const { data: profileData, error: profileError } = await supabase
-                .from("profiles")
-                .insert([
-                    {
-                        userid: userId,
-                        userName: userName,
-                        userEmail: email,
-                        userPassword: hashedPassword,
-                        created_at: new Date().toISOString(), // Ensure proper date format
-                    },
-                ])
-                .select(); // Add this to see the returned data
-
-            if (profileError) {
-                console.error("Profile creation error:", profileError);
-                throw new Error(
-                    "Failed to create profile. " + profileError.message
-                );
-            }
-
-            console.log("Profile created successfully:", profileData);
+            // Get the redirect URL to go back to the page the user was on
+            const redirectUrl = getRedirectPath();
 
             toast.success(
                 "Sign up successful! Please check your email for verification."
             );
+
+            // Clear form
             setEmail("");
             setUserName("");
             setPassword("");
             setConfirmPassword("");
             setStrength("");
 
-            // Add redirect to home page AFTER successful operations
-            router.push("/");
+            // Wait briefly for toast to be visible
+            setTimeout(() => {
+                // Redirect to the page they were on or home page
+                router.push(redirectUrl);
+            }, 1500);
+
         } catch (error) {
             console.error("Error during sign up:", error);
             toast.error(error.message || "Sign up failed. Please try again.");
@@ -135,6 +106,7 @@ const SignUp = () => {
             setLoading(false);
         }
     };
+
     return (
         <>
             <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
@@ -267,7 +239,7 @@ const SignUp = () => {
                                         </button>
                                         <div className="mt-2">
                                             {passwordError && (
-                                                <p className="error">
+                                                <p className="text-red-500 text-sm">
                                                     {passwordError}
                                                 </p>
                                             )}
@@ -275,10 +247,10 @@ const SignUp = () => {
                                     </div>
                                     <div>
                                         <div
-                                            className={`flex items-center h-1 rounded bg-gray-900 my-2`}
+                                            className="h-1 rounded bg-gray-200 my-2"
                                         >
                                             <div
-                                                className={`h-1.5 rounded transition-all duration-400 ${
+                                                className={`h-1 rounded transition-all duration-400 ${
                                                     strength === "weak"
                                                         ? "bg-red-500 w-1/3"
                                                         : strength === "medium"
@@ -299,15 +271,16 @@ const SignUp = () => {
                         <div>
                             <button
                                 type="submit"
-                                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                disabled={loading}
+                                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
                             >
-                                Sign Up
+                                {loading ? "Creating Account..." : "Sign Up"}
                             </button>
-                            <ToastContainer />
                         </div>
                     </form>
                 </div>
             </div>
+            <ToastContainer />
         </>
     );
 };

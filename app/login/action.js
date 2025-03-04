@@ -1,41 +1,25 @@
 "use server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "../../utils/supabase/server";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-export async function createClient() {
-    // Get the cookies container
-    const cookieStore = cookies();
+export async function login(formData, redirectUrl = "/") {
+    const supabase = await createClient();
 
-    // Create and return the client with cookie handling
-    return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        {
-            cookies: {
-                get(name) {
-                    // Access cookies safely and synchronously
-                    const cookie = cookieStore.get(name);
-                    return cookie?.value;
-                },
-                set(name, value, options) {
-                    try {
-                        // Set cookie safely
-                        cookieStore.set({ name, value, ...options });
-                    } catch (error) {
-                        // The `set` method was called from a Server Component.
-                        // This can be safely ignored if you have middleware handling auth.
-                    }
-                },
-                remove(name, options) {
-                    try {
-                        // Remove cookie by setting empty value
-                        cookieStore.set({ name, value: "", ...options });
-                    } catch (error) {
-                        // The `delete` method was called from a Server Component.
-                        // This can be safely ignored if you have middleware handling auth.
-                    }
-                },
-            },
-        }
-    );
+    const data = {
+        email: formData.get("email"),
+        password: formData.get("password"),
+    };
+
+    const { error } = await supabase.auth.signInWithPassword(data);
+
+    if (error) {
+        console.error("Login error:", error.message);
+        // You could return the error instead of redirecting to show on the form
+        return { error: error.message };
+    }
+
+    // If we have a redirect URL, use it, otherwise go to homepage
+    revalidatePath("/", "layout");
+    redirect(redirectUrl);
 }
