@@ -15,8 +15,8 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // Added import for toast styling
-import { logoutAction } from "../logout/actions";
 import { createClient } from "../../utils/supabase/client";
+import { logoutAction } from "../logout/actions";
 
 const Navbar = () => {
     const notify = (message) =>
@@ -99,6 +99,8 @@ const Navbar = () => {
         return true;
     };
 
+    // Rest of the existing methods remain the same...
+
     useEffect(() => {
         async function getUser() {
             const {
@@ -107,19 +109,24 @@ const Navbar = () => {
             setUser(user);
         }
         getUser();
+
         // Set up auth state change listener
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((event, session) => {
-            setUser(session?.user || null);
+            const currentUser = session?.user || null;
+            setUser(currentUser);
 
             // Show login/logout notifications
             if (event === "SIGNED_IN") {
                 notify("Successfully logged in");
+                window.location.reload();
             } else if (event === "SIGNED_OUT") {
                 notify("Successfully logged out");
+                window.location.reload();
             }
         });
+
         return () => subscription.unsubscribe();
     }, [supabase]);
 
@@ -127,7 +134,7 @@ const Navbar = () => {
     const menuItems = user
         ? [
               <MenuItem key="profile" onClick={handleClose}>
-                  <Link href="/private" className="w-full block">
+                  <Link href="/profile" className="w-full block">
                       Profile
                   </Link>
               </MenuItem>,

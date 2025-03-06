@@ -1,10 +1,30 @@
 "use server";
-import { createClient } from "../../utils/supabase/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-export async function login(formData, redirectUrl = "/") {
-    const supabase = await createClient();
+export async function login(formData) {
+    // Await the cookies
+    const cookieStore = await cookies();
+
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        {
+            cookies: {
+                get(name) {
+                    return cookieStore.get(name)?.value;
+                },
+                set(name, value, options) {
+                    cookieStore.set({ name, value, ...options });
+                },
+                remove(name, options) {
+                    cookieStore.delete({ name, ...options });
+                },
+            },
+        }
+    );
 
     const data = {
         email: formData.get("email"),
@@ -14,12 +34,12 @@ export async function login(formData, redirectUrl = "/") {
     const { error } = await supabase.auth.signInWithPassword(data);
 
     if (error) {
-        console.error("Login error:", error.message);
-        // You could return the error instead of redirecting to show on the form
-        return { error: error.message };
+        return {
+            success: false,
+            error: error.message,
+        };
     }
 
-    // If we have a redirect URL, use it, otherwise go to homepage
     revalidatePath("/", "layout");
-    redirect(redirectUrl);
+    redirect("/");
 }

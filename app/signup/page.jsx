@@ -4,6 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../utils/supabase/client";
+import bcrypt from "bcryptjs";
 
 const strengthLabels = ["weak", "medium", "medium", "strong"];
 
@@ -65,22 +66,41 @@ const SignUp = () => {
 
         try {
             setLoading(true);
-
-            // 1. Sign up with Supabase Auth - this will handle both auth and profile
+            // Sign up with Supabase Auth
             const { data, error } = await supabase.auth.signUp({
                 email,
-                password,
+                password, // This will still be required for auth
                 options: {
                     data: {
-                        username: userName,
+                        email: email,
+                        password: password,
                     },
                 },
             });
 
             if (error) throw error;
 
-            // Get the redirect URL to go back to the page the user was on
-            const redirectUrl = getRedirectPath();
+            // Get the user ID from the auth response
+            const user = data?.user;
+            if (!user) throw new Error("User registration failed");
+
+            // Hash the password before storing it
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Save user details in the 'profiles' table
+            const { error: profileError } = await supabase
+                .from("profiles")
+                .insert([
+                    {
+                        userid: user.id, // ✅ Must match auth.uid()
+                        userEmail: email,
+                        userName: userName,
+                        userPassword: hashedPassword,
+                        created_at: new Date(),
+                    },
+                ]);
+
+            if (profileError) throw profileError;
 
             toast.success(
                 "Sign up successful! Please check your email for verification."
@@ -93,12 +113,10 @@ const SignUp = () => {
             setConfirmPassword("");
             setStrength("");
 
-            // Wait briefly for toast to be visible
+            // Redirect after a short delay
             setTimeout(() => {
-                // Redirect to the page they were on or home page
-                router.push(redirectUrl);
+                router.push(getRedirectPath());
             }, 1500);
-
         } catch (error) {
             console.error("Error during sign up:", error);
             toast.error(error.message || "Sign up failed. Please try again.");
@@ -246,9 +264,7 @@ const SignUp = () => {
                                         </div>
                                     </div>
                                     <div>
-                                        <div
-                                            className="h-1 rounded bg-gray-200 my-2"
-                                        >
+                                        <div className="h-1 rounded bg-gray-200 my-2">
                                             <div
                                                 className={`h-1 rounded transition-all duration-400 ${
                                                     strength === "weak"

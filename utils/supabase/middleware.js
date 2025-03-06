@@ -3,37 +3,36 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export async function updateSession(request) {
-    const cookieStore = await cookies(); // Ensure cookies are awaited
+    let supabaseResponse = NextResponse.next();
 
-    // Create Supabase client with proper session handling
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         {
             cookies: {
-                async get(name) {
-                    const cookie = await cookieStore.get(name);
-                    return cookie?.value || "";
+                get(name) {
+                    return request.cookies.get(name)?.value;
                 },
-                async set(name, value, options) {
-                    await cookieStore.set({ name, value, ...options });
+                set(name, value, options) {
+                    request.cookies.set(name, value);
+                    supabaseResponse = NextResponse.next({
+                        request,
+                    });
+                    supabaseResponse.cookies.set(name, value, options);
                 },
-                async remove(name, options) {
-                    await cookieStore.set({ name, value: "", ...options });
+                remove(name, options) {
+                    request.cookies.delete(name);
+                    supabaseResponse = NextResponse.next({
+                        request,
+                    });
+                    supabaseResponse.cookies.delete(name, options);
                 },
             },
         }
     );
 
-    // Refresh the session
-    const {
-        data: { session },
-        error,
-    } = await supabase.auth.getSession();
-
-    if (error) {
-        console.error("Error fetching session:", error.message);
-    }
+    // Refresh session
+    await supabase.auth.getSession();
 
     // Retrieve user session
     const {
@@ -42,13 +41,13 @@ export async function updateSession(request) {
 
     // Allow browsing without login
     if (user) {
-        return NextResponse.next();
+        return supabaseResponse;
     }
 
-    // Restrict adding to cart without login
+    // Restrict access to `/cart` and `/api/cart` without login
     if (
-        request.nextUrl.pathname.includes("/cart") ||
-        (request.nextUrl.pathname.includes("/api/cart") &&
+        request.nextUrl.pathname.startsWith("/cart") ||
+        (request.nextUrl.pathname.startsWith("/api/cart") &&
             (request.method === "POST" || request.method === "PUT"))
     ) {
         if (request.nextUrl.pathname.startsWith("/cart")) {
@@ -64,9 +63,9 @@ export async function updateSession(request) {
         return NextResponse.redirect(url);
     }
 
-    return NextResponse.next();
+    return supabaseResponse;
 }
 
 export const config = {
-    matcher: ["/cart", "/api/cart"], // Apply middleware only to cart-related routes
+    matcher: ["/cart", "/api/cart"], // Apply middleware to these routes only
 };

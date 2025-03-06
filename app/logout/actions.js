@@ -1,28 +1,38 @@
 "use server";
-
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "../../utils/supabase/server";
 
 export async function logoutAction() {
-    const cookieStore = await cookies(); // Ensure cookies() is awaited
+    // Await the cookies
+    const cookieStore = await cookies();
 
-    // Pass cookies to createClient to maintain authentication context
-    const supabase = createClient(cookieStore);
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        {
+            cookies: {
+                get(name) {
+                    return cookieStore.get(name)?.value;
+                },
+                set(name, value, options) {
+                    cookieStore.set({ name, value, ...options });
+                },
+                remove(name, options) {
+                    cookieStore.delete({ name, ...options });
+                },
+            },
+        }
+    );
 
-    if (!supabase || !supabase.auth) {
-        console.error("Supabase client is not initialized correctly.");
-        return;
-    }
-
-    // Sign out the user
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-        console.error("Error signing out:", error.message);
-        return;
+        return {
+            success: false,
+            error: error.message,
+        };
     }
 
-    // Redirect after successful logout
     redirect("/");
 }

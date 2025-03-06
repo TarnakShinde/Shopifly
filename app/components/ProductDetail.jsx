@@ -8,6 +8,7 @@ import { Heart } from "lucide-react";
 const ProductDetail = ({ product }) => {
     const [selectedImage, setSelectedImage] = useState(product.image1);
     const [openIndex, setOpenIndex] = useState(null);
+    const [isHoveredHeart, setIsHoveredHeart] = useState(false);
     const { addToCart } = useCart();
     const accordionItems = [
         {
@@ -58,6 +59,23 @@ const ProductDetail = ({ product }) => {
             quantity: 1,
         });
     };
+    const handleAddToFavorites = async () => {
+        if (!isLoggedIn) {
+            // Store current page URL for redirect after auth
+            if (typeof window !== "undefined") {
+                sessionStorage.setItem(
+                    "redirectAfterAuth",
+                    window.location.pathname
+                );
+            }
+            // Redirect to login page
+            router.push("/login");
+            return;
+        }
+        // If logged in, add to favorites logic here
+        console.log("Adding to favorites:", data.uniq_id);
+        // Additional favorites logic can be implemented here
+    };
     return (
         <div className="flex flex-col md:flex-row gap-8 p-6 max-w-5xl mx-auto">
             {/* Product Images */}
@@ -70,7 +88,37 @@ const ProductDetail = ({ product }) => {
                         sizes="(max-width: 768px) 100vw, 50vw"
                         className="object-contain rounded-lg shadow-lg w-auto h-auto"
                     />
-                    <Heart className="absolute right-5 text-red-500"/>
+                    <button
+                        onMouseEnter={() => setIsHoveredHeart(true)}
+                        onMouseLeave={() => setIsHoveredHeart(false)}
+                        onClick={handleAddToFavorites}
+                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 transition-colors  "
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill={
+                                isHoveredHeart
+                                    ? "rgba(239, 68, 68, 0.2)"
+                                    : "none"
+                            }
+                            strokeWidth="2"
+                            stroke={
+                                isHoveredHeart
+                                    ? "rgb(239, 68, 68)"
+                                    : "currentColor"
+                            }
+                            className="w-6 h-6 transition-all"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M20.84 2.61a5.5 5.5 0 0 0-7.78 0L12 3.67l-1.06-1.06a5.501 5.501 0 0 0-7.78 7.78l1.06 1.06L12 19.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                            ></path>
+                        </svg>
+                    </button>
                 </div>
                 <div className="flex gap-8 overflow-x-auto">
                     {[
