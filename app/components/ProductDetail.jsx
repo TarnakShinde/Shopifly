@@ -4,12 +4,14 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { useCart } from "../context/CartContext";
 import { Heart } from "lucide-react";
+import { createClient } from "../../utils/supabase/client";
 
 const ProductDetail = ({ product }) => {
     const [selectedImage, setSelectedImage] = useState(product.image1);
     const [openIndex, setOpenIndex] = useState(null);
     const [isHoveredHeart, setIsHoveredHeart] = useState(false);
     const { addToCart } = useCart();
+    const supabase = createClient();
     const accordionItems = [
         {
             title: "Specifications",
@@ -50,15 +52,50 @@ const ProductDetail = ({ product }) => {
             />
         </svg>
     );
-    const handleAddToCart = () => {
-        addToCart({
-            unique_id: product.unique_id,
-            product_name: product.product_name,
-            discounted_price: product.discounted_price,
-            image1: product.image1,
-            quantity: 1,
-        });
+    // const handleAddToCart = () => {
+    //     addToCart({
+    //         unique_id: product.unique_id,
+    //         product_name: product.product_name,
+    //         discounted_price: product.discounted_price,
+    //         image1: product.image1,
+    //         quantity: 1,
+    //     });
+    // };
+    const handleAddToCart = async (product) => {
+        // Retrieve user from Supabase auth
+
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData?.user;
+
+        if (!user) {
+            // Store redirect path before login
+            if (typeof window !== "undefined") {
+                sessionStorage.setItem(
+                    "redirectAfterAuth",
+                    window.location.pathname
+                );
+            }
+            router.push("/login");
+            return;
+        }
+
+        if (!product || !product.unique_id) {
+            console.error("Data is missing unique_id:", product);
+            return;
+        }
+
+        const productToAdd = {
+            unique_id: data.unique_id,
+            product_name: data.product_name,
+            discounted_price: data.discounted_price,
+            image1: data.image1,
+            quantity: 1, // Adding default quantity
+        };
+
+        console.log("Adding to cart:", productToAdd);
+        addToCart(productToAdd);
     };
+
     const handleAddToFavorites = async () => {
         if (!isLoggedIn) {
             // Store current page URL for redirect after auth
@@ -167,7 +204,7 @@ const ProductDetail = ({ product }) => {
                     </button>
                     <button
                         className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
-                        onClick={handleAddToCart}
+                        onClick={() => handleAddToCart(product)}
                     >
                         Add to Cart
                     </button>

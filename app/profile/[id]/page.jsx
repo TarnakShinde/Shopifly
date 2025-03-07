@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient } from "../../utils/supabase/client";
+import { createClient } from "../../../utils/supabase/client";
 
-export default async function PrivatePage() {
+export default async function Profile({ searchParams }) {
+    const { id } = searchParams();
     const supabase = createClient();
 
     const { data, error } = await supabase.auth.getUser();

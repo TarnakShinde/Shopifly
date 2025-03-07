@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../utils/supabase/client";
 import { useCart } from "../context/CartContext";
+import { toast } from "react-toastify";
 
 const ProductCard = ({ data, isLoggedIn }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -19,6 +20,7 @@ const ProductCard = ({ data, isLoggedIn }) => {
 
     const { addToCart } = useCart();
 
+    // Rotate images every 3 seconds
     useEffect(() => {
         // Only rotate images if there are multiple images
         if (images.length > 1) {
@@ -32,6 +34,7 @@ const ProductCard = ({ data, isLoggedIn }) => {
         }
     }, [images.length]);
 
+    // Generate a random review count for the product
     useEffect(() => {
         // Generate a stable random review count based on product name
         const productNameHash = data.product_name
@@ -42,37 +45,77 @@ const ProductCard = ({ data, isLoggedIn }) => {
     }, [data.product_name]);
 
     // Function to handle adding to cart
-    const handleAddToCart = async () => {
-        // if (!isLoggedIn) {
-        //     // Store current page URL for redirect after auth
-        //     if (typeof window !== "undefined") {
-        //         sessionStorage.setItem(
-        //             "redirectAfterAuth",
-        //             window.location.pathname
-        //         );
-        //     }
-        //     // Redirect to login page
-        //     router.push("/login");
-        //     return;
-        // }
+    // const handleAddToCart = async () => {
+    //     // if (!isLoggedIn) {
+    //     //     // Store current page URL for redirect after auth
+    //     //     if (typeof window !== "undefined") {
+    //     //         sessionStorage.setItem(
+    //     //             "redirectAfterAuth",
+    //     //             window.location.pathname
+    //     //         );
+    //     //     }
+    //     //     // Redirect to login page
+    //     //     router.push("/login");
+    //     //     return;
+    //     // }
 
-        // Check if data is valid and contains the needed ID
-        if (!data || !data.uniq_id) {
-            console.error("Data is missing uniq_id:", data);
+    //     // Check if data is valid and contains the needed ID
+    //     if (!data || !data.uniq_id) {
+    //         console.error("Data is missing uniq_id:", data);
+    //         return;
+    //     }
+
+    //     // Create a properly formatted product object
+    //     const productToAdd = {
+    //         unique_id: data.uniq_id,
+    //         product_name: data.product_name,
+    //         discounted_price: data.discounted_price,
+    //         image1: data.image1,
+    //         quantity: 1, // Adding default quantity
+    //     };
+
+    //     console.log("Adding to cart:", productToAdd);
+    //     addToCart(productToAdd);
+    // };
+
+    const handleAddToCart = async (data) => {
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData?.user;
+        console.log("User object:", user);
+        if (!user) {
+            if (typeof window !== "undefined") {
+                sessionStorage.setItem(
+                    "redirectAfterAuth",
+                    window.location.pathname
+                );
+            }
+            router.push("/login");
             return;
         }
 
-        // Create a properly formatted product object
-        const productToAdd = {
-            unique_id: data.unique_id,
-            product_name: data.product_name,
-            discounted_price: data.discounted_price,
-            image1: data.image1,
-            quantity: 1, // Adding default quantity
-        };
+        if (!data || !data.uniq_id) {
+            console.error("Data is missing unique_id:", data);
+            return;
+        }
 
+        // const productToAdd = {
+        //     user_id: user.id, // Link cart to user
+        //     product_uniq_id: data.uniq_id,
+        //     quantity: 1, // Default quantity
+        //     discounted_price: data.discounted_price || 0, // Ensure a valid number
+        //     image1: data.image1 || "/placeholder-image.png", // Provide fallback image
+        // };
+        const productToAdd = {
+            user_id: user.id,
+            product_uniq_id: data.uniq_id,
+            quantity: 1,
+            discounted_price: data.discounted_price || 0, // Ensure a valid number
+            image1: data.image1 || "/placeholder-image.png", // Provide fallback image
+            product_name: data.product_name,
+        };
         console.log("Adding to cart:", productToAdd);
         addToCart(productToAdd);
+        toast.success("Added to cart");
     };
 
     // Function to handle adding to favorites
@@ -198,7 +241,7 @@ const ProductCard = ({ data, isLoggedIn }) => {
                 <div className="flex justify-center gap-2 mt-2">
                     <button
                         className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors"
-                        onClick={handleAddToCart}
+                        onClick={() => handleAddToCart(data)}
                     >
                         Add to Cart
                     </button>

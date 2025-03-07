@@ -8,12 +8,12 @@ const Cart = () => {
     const { cart, removeFromCart, updateQuantity } = useCart();
 
     const calculateTotal = () => {
-        return cart.reduce(
-            (total, item) => total + item.discounted_price * item.quantity,
-            0
-        );
+        return cart.reduce((total, item) => {
+            const price = Number(item.discounted_price) || 0; // Convert to number
+            const qty = Number(item.quantity) || 1; // Convert to number
+            return total + price * qty;
+        }, 0);
     };
-
     if (cart.length === 0) {
         return (
             <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg text-center">
@@ -31,14 +31,22 @@ const Cart = () => {
                     key={index}
                 >
                     <div className="flex items-center space-x-4">
-                        <Image
+                        {/* <Image
                             key={`image-${item.unique_id}`}
                             src={item.image1}
                             alt={item.product_name}
                             width={80}
                             height={80}
                             className="object-cover rounded-md"
+                        /> */}
+                        <Image
+                            src={item.image1 || "/placeholder-image.png"} // Fallback image
+                            alt={item.product_name || item.product_name}
+                            width={80}
+                            height={80}
+                            className="object-cover rounded-md"
                         />
+
                         <div key={`info-${item.unique_id}`}>
                             <h3 className="font-semibold">
                                 {item.product_name}
