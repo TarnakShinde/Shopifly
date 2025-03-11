@@ -2,13 +2,15 @@
 import { Eye, EyeOff } from "lucide-react";
 import { login } from "./action.js";
 import { ToastContainer, toast } from "react-toastify";
-import React, { useState } from "react";
-
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
+    const [userRole, setUserRole] = useState(null);
+    const router = useRouter();
 
     const handleLogin = async (formData) => {
         const result = await login(formData);
@@ -32,9 +34,31 @@ export default function LoginPage() {
         setShowPassword(!showPassword);
     };
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        // Call the login function to authenticate
+        const result = await login(formData);
+
+        if (result.success) {
+            setUserRole(result.userRole); // Set the user role on successful login
+        } else {
+            setError(result.error); // Handle error if login fails
+        }
+    };
+
+    useEffect(() => {
+        if (userRole === "admin") {
+            router.push("/dashboard"); // Redirect to dashboard if admin
+        } else if (userRole === "user") {
+            router.push("/"); // Redirect to home if not an admin
+        }
+    }, [userRole, router]);
+
     return (
         <div>
-            <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+            <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 max-h-screen">
                 <div className="sm:mx-auto sm:w-full sm:max-w-sm">
                     <div className="mx-auto h-10 w-auto text-4xl text-center font-bold">
                         SHOPI<span className="text-green-500">FLY</span>
@@ -44,7 +68,7 @@ export default function LoginPage() {
                     </h2>
                 </div>
                 <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                    <form className="space-y-6" action={handleLogin}>
+                    <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>
                             <label
                                 htmlFor="email"
@@ -75,7 +99,7 @@ export default function LoginPage() {
                                 </label>
                                 <div className="text-sm">
                                     <a
-                                        href="#"
+                                        href="/change-password"
                                         className="font-semibold text-indigo-600 hover:text-indigo-500"
                                     >
                                         Forgot password?

@@ -5,6 +5,7 @@ import CategorySlider from "./components/CategorySlider";
 import ChatBot from "./components/ChatBot";
 import ProductSlider from "./components/ProductSlider";
 import { getUsersForHero } from "./api/products/route";
+
 const Home = () => {
     const [heroData, setHeroData] = useState([]);
     useEffect(() => {
@@ -14,15 +15,12 @@ const Home = () => {
         }
         products();
     }, []);
-
     return (
         <div>
             <HeroSlider products={heroData} />
             <CategorySlider />
-            <ChatBot />
             <ProductSlider id={0} />
-            {/* <SignUp /> */}
-            {/* <RegistrationPage /> */}
+            <ChatBot />
         </div>
     );
 };

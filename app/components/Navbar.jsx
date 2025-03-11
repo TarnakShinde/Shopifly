@@ -118,13 +118,13 @@ const Navbar = () => {
             setUser(currentUser);
 
             // Show login/logout notifications
-            if (event === "SIGNED_IN") {
-                notify("Successfully logged in");
-                window.location.reload();
-            } else if (event === "SIGNED_OUT") {
-                notify("Successfully logged out");
-                window.location.reload();
-            }
+            // if (event === "SIGNED_IN") {
+            //     notify("Successfully logged in");
+            //     window.location.reload();
+            // } else if (event === "SIGNED_OUT") {
+            //     notify("Successfully logged out");
+            //     window.location.reload();
+            // }
         });
 
         return () => subscription.unsubscribe();
@@ -134,7 +134,7 @@ const Navbar = () => {
     const menuItems = user
         ? [
               <MenuItem key="profile" onClick={handleClose}>
-                  <Link href="/profile" className="w-full block">
+                  <Link href={`/profile`} className="w-full block">
                       Profile
                   </Link>
               </MenuItem>,
@@ -163,7 +163,7 @@ const Navbar = () => {
 
     return (
         <>
-            <nav className="bg-black">
+            <nav className="bg-[var(--second-color)] shadow-lg">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         {/* Logo Section */}
@@ -173,7 +173,9 @@ const Navbar = () => {
                                 className="lg:text-2xl md:text-xl sm:text-base text-white font-bold"
                             >
                                 SHOPI
-                                <span className="text-green-500">FLY</span>
+                                <span className="text-[var(--first-color)]">
+                                    FLY
+                                </span>
                             </Link>
                         </div>
 
@@ -187,7 +189,7 @@ const Navbar = () => {
                                             value={query}
                                             onChange={handleSearch}
                                             placeholder="Search Anything.."
-                                            className="sm:w-[100px] w-full md:w-[300px] p-2 font-mono rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 py-3 px-4"
+                                            className="sm:w-[100px] w-full md:w-[300px] p-2 font-mono rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 py-3 px-4 bg-[var(--sixth-color)] text-[var(--forth-color)]"
                                             ref={searchField}
                                         />
                                         <Search className="absolute right-3 bottom-3.5 w-5 h-5 text-gray-600 hover:text-gray-400 " />
@@ -240,7 +242,7 @@ const Navbar = () => {
                                     <House />
                                 </Link>
                                 <Link
-                                    href="/favorites"
+                                    href="/liked-products"
                                     className="text-white hover:bg-white hover:text-black rounded-lg p-2"
                                 >
                                     <Heart />
@@ -345,7 +347,7 @@ const Navbar = () => {
                                 </span>
                             </Link>
                             <Link
-                                href="/favorites"
+                                href="/liked-products"
                                 className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
                                 onClick={() => setIsClick(false)}
                             >

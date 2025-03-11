@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "../../utils/supabase/client";
 import { useCart } from "../context/CartContext";
 import { toast } from "react-toastify";
+import { handleAddToFavorites } from "../../utils/favorites";
 
 const ProductCard = ({ data, isLoggedIn }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [user, setUser] = useState(null);
     const [isHoveredHeart, setIsHoveredHeart] = useState(false);
     const images = [data.image1, data.image2, data.image3, data.image4].filter(
         Boolean
@@ -44,39 +46,15 @@ const ProductCard = ({ data, isLoggedIn }) => {
         setRandomReviewCount(count);
     }, [data.product_name]);
 
-    // Function to handle adding to cart
-    // const handleAddToCart = async () => {
-    //     // if (!isLoggedIn) {
-    //     //     // Store current page URL for redirect after auth
-    //     //     if (typeof window !== "undefined") {
-    //     //         sessionStorage.setItem(
-    //     //             "redirectAfterAuth",
-    //     //             window.location.pathname
-    //     //         );
-    //     //     }
-    //     //     // Redirect to login page
-    //     //     router.push("/login");
-    //     //     return;
-    //     // }
-
-    //     // Check if data is valid and contains the needed ID
-    //     if (!data || !data.uniq_id) {
-    //         console.error("Data is missing uniq_id:", data);
-    //         return;
-    //     }
-
-    //     // Create a properly formatted product object
-    //     const productToAdd = {
-    //         unique_id: data.uniq_id,
-    //         product_name: data.product_name,
-    //         discounted_price: data.discounted_price,
-    //         image1: data.image1,
-    //         quantity: 1, // Adding default quantity
-    //     };
-
-    //     console.log("Adding to cart:", productToAdd);
-    //     addToCart(productToAdd);
-    // };
+    //Generate the user object
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: userData } = await supabase.auth.getUser();
+            const user = userData?.user;
+            setUser(userData?.user);
+        };
+        getUser();
+    }, []);
 
     const handleAddToCart = async (data) => {
         const { data: userData } = await supabase.auth.getUser();
@@ -89,6 +67,7 @@ const ProductCard = ({ data, isLoggedIn }) => {
                     window.location.pathname
                 );
             }
+            toast.error("Please login to add to cart");
             router.push("/login");
             return;
         }
@@ -97,14 +76,6 @@ const ProductCard = ({ data, isLoggedIn }) => {
             console.error("Data is missing unique_id:", data);
             return;
         }
-
-        // const productToAdd = {
-        //     user_id: user.id, // Link cart to user
-        //     product_uniq_id: data.uniq_id,
-        //     quantity: 1, // Default quantity
-        //     discounted_price: data.discounted_price || 0, // Ensure a valid number
-        //     image1: data.image1 || "/placeholder-image.png", // Provide fallback image
-        // };
         const productToAdd = {
             user_id: user.id,
             product_uniq_id: data.uniq_id,
@@ -117,30 +88,17 @@ const ProductCard = ({ data, isLoggedIn }) => {
         addToCart(productToAdd);
         toast.success("Added to cart");
     };
-
-    // Function to handle adding to favorites
-    const handleAddToFavorites = async () => {
-        if (!isLoggedIn) {
-            // Store current page URL for redirect after auth
-            if (typeof window !== "undefined") {
-                sessionStorage.setItem(
-                    "redirectAfterAuth",
-                    window.location.pathname
-                );
-            }
-            // Redirect to login page
-            router.push("/login");
-            return;
-        }
-        // If logged in, add to favorites logic here
-        console.log("Adding to favorites:", data.uniq_id);
-        // Additional favorites logic can be implemented here
-    };
-
+    // If data is not available, show a loading state
     if (!data || randomReviewCount === null) {
         return (
-            <div className="w-64 h-[380px] bg-white rounded-xl shadow-md border border-gray-200 p-4 flex items-center justify-center">
-                Loading...
+            <div className="w-64 h-[380px] bg-white rounded-xl shadow-md border border-gray-200 p-4 flex flex-col hover:shadow-lg transition-shadow">
+                <div className="animate-pulse h-[210px] bg-gray-200 rounded-xl"></div>
+                <div className="mt-3 animate-pulse h-12 bg-gray-200 rounded-md"></div>
+                <div className="mt-2 animate-pulse h-8 bg-gray-200 rounded-md"></div>
+                <div className="mt-auto flex justify-center gap-2">
+                    <div className="animate-pulse bg-gray-200 h-8 w-1/2 rounded-md"></div>
+                    <div className="animate-pulse bg-gray-200 h-8 w-1/2 rounded-md"></div>
+                </div>
             </div>
         );
     }
@@ -179,7 +137,30 @@ const ProductCard = ({ data, isLoggedIn }) => {
                     className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
                     onMouseEnter={() => setIsHoveredHeart(true)}
                     onMouseLeave={() => setIsHoveredHeart(false)}
-                    onClick={handleAddToFavorites}
+                    onClick={async () => {
+                        if (!user) {
+                            // Store current page URL for redirect after auth
+                            if (typeof window !== "undefined") {
+                                sessionStorage.setItem(
+                                    "redirectAfterAuth",
+                                    window.location.pathname
+                                );
+                            }
+                            // Redirect to login page
+                            router.push("/login");
+                            return;
+                        }
+
+                        const result = await handleAddToFavorites(
+                            data.uniq_id,
+                            user
+                        );
+
+                        if (result.requiresAuth) {
+                            // Redirect to login page
+                            router.push("/login");
+                        }
+                    }}
                     aria-label="Add to favorites"
                 >
                     <svg

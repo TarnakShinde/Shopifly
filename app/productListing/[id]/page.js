@@ -97,7 +97,7 @@ const ProductListing = ({ searchParams }) => {
     return (
         <div className="container mx-auto px-4 py-8">
             {/*Product Slider*/}
-            <div className="bg-grey-100 p-4 mb-6 rounded-lg">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-100 p-6 mb-8 rounded-xl shadow-sm border border-blue-100">
                 <ProductSlider id={id} />
             </div>
             {/* Filters and Sort Section */}

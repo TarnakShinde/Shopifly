@@ -25,85 +25,71 @@ const Cart = () => {
     return (
         <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
             <h2 className="text-2xl font-bold mb-6">Your Cart</h2>
+
             {cart.map((item, index) => (
                 <div
-                    className="flex items-center justify-between border-b py-4"
                     key={index}
+                    className="flex flex-col sm:flex-row items-center justify-between border-b py-4 gap-4"
                 >
-                    <div className="flex items-center space-x-4">
-                        {/* <Image
-                            key={`image-${item.unique_id}`}
-                            src={item.image1}
+                    {/* Product Image and Info */}
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <Image
+                            src={item.image1 || "/placeholder-image.png"} // Fallback image
                             alt={item.product_name}
                             width={80}
                             height={80}
-                            className="object-cover rounded-md"
-                        /> */}
-                        <Image
-                            src={item.image1 || "/placeholder-image.png"} // Fallback image
-                            alt={item.product_name || item.product_name}
-                            width={80}
-                            height={80}
-                            className="object-cover rounded-md"
+                            className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-md"
                         />
-
-                        <div key={`info-${item.unique_id}`}>
-                            <h3 className="font-semibold">
+                        <div>
+                            <h3 className="font-semibold text-center sm:text-left">
                                 {item.product_name}
                             </h3>
-                            <p className="text-gray-500">
+                            <p className="text-gray-500 text-center sm:text-left">
                                 ₹{item.discounted_price}
                             </p>
                         </div>
                     </div>
-                    <div
-                        key={`controls-${item.unique_id}`}
-                        className="flex items-center space-x-4"
-                    >
-                        <div className="flex items-center border rounded-full">
+
+                    {/* Quantity Controls and Price */}
+                    <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+                        <div className="flex items-center border rounded-full overflow-hidden">
                             <button
-                                key={`minus-${item.unique_id}`}
                                 onClick={() =>
                                     updateQuantity(
-                                        item.unique_id,
+                                        item.cart_id,
                                         item.quantity - 1
                                     )
                                 }
-                                // disabled={item.quantity <= 1}
-                                className="p-2 disabled:opacity-50"
+                                className="p-2 bg-gray-200 hover:bg-gray-300 transition"
                             >
                                 <Minus size={16} />
                             </button>
-                            <span
-                                key={`quantity-${item.unique_id}`}
-                                className="px-4"
-                            >
+                            <span className="px-4 text-center w-8 mr-2">
                                 {item.quantity}
                             </span>
                             <button
-                                key={`plus-${item.unique_id}`}
                                 onClick={() =>
                                     updateQuantity(
-                                        item.unique_id,
+                                        item.cart_id,
                                         item.quantity + 1
                                     )
                                 }
-                                className="p-2"
+                                className="p-2 bg-gray-200 hover:bg-gray-300 transition"
                             >
                                 <Plus size={16} />
                             </button>
                         </div>
-                        <span
-                            key={`total-${item.unique_id}`}
-                            className="font-bold"
-                        >
+
+                        {/* Total Price */}
+                        <span className="font-bold text-lg">
                             ₹
                             {(item.discounted_price * item.quantity).toFixed(2)}
                         </span>
+
+                        {/* Delete Button */}
                         <button
-                            key={`delete-${item.unique_id}`}
-                            onClick={() => removeFromCart(item.unique_id)}
-                            className="text-red-500"
+                            onClick={() => removeFromCart(item.cart_id)}
+                            className="text-red-500 hover:text-red-600 transition"
                         >
                             <Trash2 size={20} />
                         </button>

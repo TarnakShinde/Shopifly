@@ -1,11 +1,9 @@
+// app/login/actions.js
 "use server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 export async function login(formData) {
-    // Await the cookies
     const cookieStore = await cookies();
 
     const supabase = createServerClient(
@@ -31,15 +29,26 @@ export async function login(formData) {
         password: formData.get("password"),
     };
 
-    const { error } = await supabase.auth.signInWithPassword(data);
+    const { data: authData, error } = await supabase.auth.signInWithPassword(
+        data
+    );
 
     if (error) {
-        return {
-            success: false,
-            error: error.message,
-        };
+        return { success: false, error: error.message };
     }
 
-    revalidatePath("/", "layout");
-    redirect("/");
+    const userId = authData.user.id;
+
+    // Fetch user role from profiles table
+    const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("userRole")
+        .eq("userid", userId)
+        .single();
+
+    if (profileError) {
+        return { success: false, error: "Failed to fetch user profile" };
+    }
+
+    return { success: true, userRole: profileData.userRole };
 }

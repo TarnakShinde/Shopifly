@@ -1,10 +1,9 @@
 import React from "react";
-import { Facebook, Instagram, Github, Youtube } from "lucide-react";
-import { Twitter } from "lucide-react";
+import { Facebook, Instagram, Github, Youtube, Twitter } from "lucide-react";
 
 const Footer = () => {
     return (
-        <footer className="bg-gray-900 text-gray-400 py-6 text-center">
+        <footer className="bg-[var(--second-color)] shadow-lg text-gray-400 py-6 text-center">
             <div className="flex justify-center space-x-6 text-sm mb-4">
                 <a href="#" className="hover:text-white">
                     Home
@@ -44,9 +43,7 @@ const Footer = () => {
                 </a>
             </div>
 
-            <p className="text-sm">
-                © 2024 Your Company, Inc. All rights reserved.
-            </p>
+            <p className="text-sm">© 2025 Shopifly. All rights reserved.</p>
         </footer>
     );
 };

@@ -1,17 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
-import { Heart } from "lucide-react";
 import { createClient } from "../../utils/supabase/client";
+import { useRouter } from "next/navigation";
+import { handleAddToFavorites } from "../../utils/favorites";
+import { toast } from "react-toastify";
 
 const ProductDetail = ({ product }) => {
     const [selectedImage, setSelectedImage] = useState(product.image1);
     const [openIndex, setOpenIndex] = useState(null);
+    const [user, setUser] = useState(null);
     const [isHoveredHeart, setIsHoveredHeart] = useState(false);
     const { addToCart } = useCart();
     const supabase = createClient();
+    const router = useRouter();
+
     const accordionItems = [
         {
             title: "Specifications",
@@ -52,69 +57,50 @@ const ProductDetail = ({ product }) => {
             />
         </svg>
     );
-    // const handleAddToCart = () => {
-    //     addToCart({
-    //         unique_id: product.unique_id,
-    //         product_name: product.product_name,
-    //         discounted_price: product.discounted_price,
-    //         image1: product.image1,
-    //         quantity: 1,
-    //     });
-    // };
-    const handleAddToCart = async (product) => {
-        // Retrieve user from Supabase auth
-
+    const handleAddToCart = async (data) => {
         const { data: userData } = await supabase.auth.getUser();
         const user = userData?.user;
-
+        console.log("User object:", user);
         if (!user) {
-            // Store redirect path before login
             if (typeof window !== "undefined") {
                 sessionStorage.setItem(
                     "redirectAfterAuth",
                     window.location.pathname
                 );
             }
+            toast.error("Please login to add to cart");
             router.push("/login");
             return;
         }
 
-        if (!product || !product.unique_id) {
-            console.error("Data is missing unique_id:", product);
+        if (!data || !data.uniq_id) {
+            console.error("Data is missing unique_id:", data);
             return;
         }
-
         const productToAdd = {
-            unique_id: data.unique_id,
+            user_id: user.id,
+            product_uniq_id: data.uniq_id,
+            quantity: 1,
+            discounted_price: data.discounted_price || 0, // Ensure a valid number
+            image1: data.image1 || "/placeholder-image.png", // Provide fallback image
             product_name: data.product_name,
-            discounted_price: data.discounted_price,
-            image1: data.image1,
-            quantity: 1, // Adding default quantity
         };
-
         console.log("Adding to cart:", productToAdd);
         addToCart(productToAdd);
+        toast.success("Added to cart");
     };
+    // Get user details
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: userData } = await supabase.auth.getUser();
+            const user = userData?.user;
+            setUser(userData?.user);
+        };
+        getUser();
+    }, []);
 
-    const handleAddToFavorites = async () => {
-        if (!isLoggedIn) {
-            // Store current page URL for redirect after auth
-            if (typeof window !== "undefined") {
-                sessionStorage.setItem(
-                    "redirectAfterAuth",
-                    window.location.pathname
-                );
-            }
-            // Redirect to login page
-            router.push("/login");
-            return;
-        }
-        // If logged in, add to favorites logic here
-        console.log("Adding to favorites:", data.uniq_id);
-        // Additional favorites logic can be implemented here
-    };
     return (
-        <div className="flex flex-col md:flex-row gap-8 p-6 max-w-5xl mx-auto">
+        <div className="flex flex-col md:flex-row gap-8 p-6 max-w-5xl mx-auto h-100vh">
             {/* Product Images */}
             <div className="w-full md:w-1/2 flex flex-col gap-4">
                 <div className="w-full aspect-square relative">
@@ -126,10 +112,31 @@ const ProductDetail = ({ product }) => {
                         className="object-contain rounded-lg shadow-lg w-auto h-auto"
                     />
                     <button
+                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
                         onMouseEnter={() => setIsHoveredHeart(true)}
                         onMouseLeave={() => setIsHoveredHeart(false)}
-                        onClick={handleAddToFavorites}
-                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 transition-colors  "
+                        onClick={async () => {
+                            if (!user) {
+                                // Store current page URL for redirect after auth
+                                if (typeof window !== "undefined") {
+                                    sessionStorage.setItem(
+                                        "redirectAfterAuth",
+                                        window.location.pathname
+                                    );
+                                }
+                                router.push("/login");
+                                return;
+                            }
+
+                            const result = await handleAddToFavorites(
+                                product.uniq_id,
+                                user
+                            );
+                            if (result.requiresAuth) {
+                                router.push("/login");
+                            }
+                        }}
+                        aria-label="Add to favorites"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -199,9 +206,6 @@ const ProductDetail = ({ product }) => {
                     </span>
                 </p>
                 <div className="flex gap-5">
-                    <button className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600">
-                        Buy Now
-                    </button>
                     <button
                         className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
                         onClick={() => handleAddToCart(product)}

@@ -48,7 +48,7 @@ const CategorySlider = () => {
     };
 
     return (
-        <div className="w-full px-4 py-6">
+        <div className="w-full px-4 py-6 bg-gradient-to-r from-blue-50 to-indigo-100">
             <div className="max-w-6xl mx-auto">
                 <Slider {...settings} className="category-slider">
                     {categoryImage.map((category) => (
