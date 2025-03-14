@@ -21,11 +21,7 @@ export default function RootLayout({ children }) {
             <body className={`${poppins.variable} antialiased`}>
                 <AuthProvider>
                     <CartProvider>
-                        <LayoutWrapper>
-                            {" "}
-                            {/* ✅ Wrap children inside LayoutWrapper */}
-                            {children}
-                        </LayoutWrapper>
+                        <LayoutWrapper> {children}</LayoutWrapper>
                     </CartProvider>
                 </AuthProvider>
             </body>

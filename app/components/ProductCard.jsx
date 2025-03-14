@@ -221,27 +221,11 @@ const ProductCard = ({ data, isLoggedIn }) => {
 
                 <div className="flex justify-center gap-2 mt-2">
                     <button
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors"
+                        className="flex-1 bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors"
                         onClick={() => handleAddToCart(data)}
                     >
                         Add to Cart
                     </button>
-                    <Link
-                        href={
-                            isLoggedIn ? `/product/${data.uniq_id}` : "/login"
-                        }
-                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors"
-                        onClick={() => {
-                            if (!isLoggedIn && typeof window !== "undefined") {
-                                sessionStorage.setItem(
-                                    "redirectAfterAuth",
-                                    `/product/${data.uniq_id}`
-                                );
-                            }
-                        }}
-                    >
-                        Buy Now
-                    </Link>
                 </div>
             </div>
         </div>

@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createClient } from "../../utils/supabase/client";
 import bcrypt from "bcryptjs";
+import { supabase } from "@/lib/supabase";
 
 const strengthLabels = ["weak", "medium", "medium", "strong"];
 
@@ -19,7 +19,6 @@ const SignUp = () => {
     const [loading, setLoading] = useState(false);
 
     const router = useRouter();
-    const supabase = createClient();
 
     // Get the redirect path from sessionStorage (set by our auth redirect hook)
     const getRedirectPath = () => {

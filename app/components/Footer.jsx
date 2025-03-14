@@ -5,23 +5,30 @@ const Footer = () => {
     return (
         <footer className="bg-[var(--second-color)] shadow-lg text-gray-400 py-6 text-center">
             <div className="flex justify-center space-x-6 text-sm mb-4">
-                <a href="#" className="hover:text-white">
+                <a href="/" className="hover:text-white">
                     Home
                 </a>
-                <a href="#" className="hover:text-white">
-                    Shop
+                <a
+                    href="http://localhost:3000/productListing/1"
+                    className="hover:text-white"
+                >
+                    Men
                 </a>
-                <a href="#" className="hover:text-white">
-                    About Us
+                <a
+                    href="http://localhost:3000/productListing/1"
+                    className="hover:text-white"
+                >
+                    Women
                 </a>
-                <a href="#" className="hover:text-white">
-                    Contact
+                <a
+                    href="http://localhost:3000/productListing/1"
+                    className="hover:text-white"
+                >
+                    Kids
                 </a>
-                <a href="#" className="hover:text-white">
-                    Privacy Policy
-                </a>
-                <a href="#" className="hover:text-white">
-                    Terms of Service
+
+                <a href="/" className="hover:text-white">
+                    Many More
                 </a>
             </div>
 

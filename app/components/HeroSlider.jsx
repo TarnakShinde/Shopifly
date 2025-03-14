@@ -29,6 +29,7 @@ const HeroSlider = ({ products }) => {
         return text;
     };
 
+    // Function to handle image loading failures with multiple fallbacks
     const handleImageError = (id) => {
         setImageError((prev) => ({
             ...prev,
@@ -36,16 +37,21 @@ const HeroSlider = ({ products }) => {
         }));
     };
 
-    // Use a placeholder image when the original image fails to load
+    // Function to get image source with multiple fallbacks
     const getImageSrc = (product) => {
-        if (imageError[product.uniq_id]) {
-            return (
-                product.image1 ||
-                process.env.NEXT_PUBLIC_PLACEHOLDER_IMAGE ||
-                "/placeholder-image.jpg"
-            );
+        // If the primary image has already errored
+        if (imageError[product.image1]) {
+            // Try secondary image options in sequence
+            if (product.image2) {
+                return product.image2;
+            } else if (product.image1) {
+                return product.image1;
+            } else {
+                return "/public/icons8-shopping-bag-48.png";
+            }
         }
-        return product.image1;
+        // Default to the primary image if no errors yet
+        return product.image1 || "/public/icons8-shopping-bag-48.png";
     };
 
     return (
@@ -54,42 +60,36 @@ const HeroSlider = ({ products }) => {
                 {products.map((product) => (
                     <div key={product.uniq_id} className="relative w-full">
                         {/* Mobile & Medium Layout (Background Image with Overlay) */}
-
-                        <div className="lg:hidden relative min-h-[450px] overflow-hidden rounded-lg">
-                            {/* Background image with reduced brightness */}
-                            <div
-                                className="absolute inset-0 bg-no-repeat bg-center"
-                                onError={() =>
-                                    handleImageError(product.uniq_id)
-                                }
-                                style={{
-                                    backgroundImage: `url(${getImageSrc(
-                                        product
-                                    )})`,
-                                    backgroundSize: "cover",
-                                    filter: "brightness(0.7)", // Reduced brightness to make text more readable
-                                }}
-                            />
-
-                            {/* Text overlay directly on image */}
-                            <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6 space-y-4">
-                                <h1 className="text-xl md:text-2xl font-bold text-white leading-tight drop-shadow-md">
-                                    <span className="block">
-                                        {product.product_name}
-                                    </span>
+                        <div className="lg:hidden relative min-h-[450px] overflow-hidden rounded-lg border border-gray-200 flex flex-col">
+                            {/* Product image section */}
+                            <div className="relative h-64 bg-gray-100 flex items-center justify-center">
+                                <img
+                                    src={getImageSrc(product.image1)}
+                                    alt={product.product_name}
+                                    className="max-h-full max-w-full object-contain p-4"
+                                />
+                            </div>
+                            {/* Product details section */}
+                            <div className="flex-grow p-4 md:p-6 flex flex-col">
+                                <h1 className="text-xl md:text-2xl font-bold text-gray-800 leading-tight mb-2 capitalize">
+                                    {product.product_name}
                                 </h1>
-                                <p className="text-white/90 text-sm md:text-md max-w-lg drop-shadow-md">
+                                <p className="text-gray-600 text-sm md:text-md flex-grow mb-4">
                                     {truncateText(product.description, 25)}
                                 </p>
-                                <div className="pt-4 pb-6">
-                                    <Link href={`/product/${product.uniq_id}`}>
-                                        <button className="w-full sm:w-auto bg-orange-500 text-white px-8 py-3 text-base md:text-lg font-medium hover:bg-orange-300 transition-colors duration-300 rounded-md">
+                                <div className="mt-auto">
+                                    <Link
+                                        href={`/product/${product.uniq_id}`}
+                                        className="block"
+                                    >
+                                        <button className="w-full bg-orange-500 text-white px-8 py-3 text-base md:text-lg font-medium hover:bg-orange-400 transition-colors duration-300 rounded-md">
                                             Shop Now
                                         </button>
                                     </Link>
                                 </div>
                             </div>
                         </div>
+
                         {/* Desktop Layout (Grid) */}
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-100 p-6 rounded-xl shadow-sm border border-blue-100">
                             <div className="hidden lg:block min-h-[450px] bg-[var(--fourth-color)]">

@@ -1,8 +1,7 @@
-import { createClient } from "../../utils/supabase/client";
+import { supabase } from "../../lib/supabase";
 import Dashboard from "./Dashboard";
 
 export async function fetchDashboardData() {
-    const supabase = await createClient();
     // Fetch product and user data
     const { data: productData, error: productError } = await supabase
         .from("products")

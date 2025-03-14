@@ -4,6 +4,7 @@ import Slider from "react-slick";
 import ProductCard from "./ProductCard";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { ArrowBigRight, ArrowBigLeft } from "lucide-react";
 
 const ProductSlider = ({ id }) => {
     const [products, setProducts] = useState([]);
@@ -38,44 +39,30 @@ const ProductSlider = ({ id }) => {
         fetchData();
     }, [id]); // Added id as dependency to refetch when id changes
 
-    // Custom arrow components for more prominent navigation
+    // Custom arrow components with improved visibility and positioning
     const NextArrow = (props) => {
-        const { className, style, onClick } = props;
+        const { onClick } = props;
         return (
             <div
-                className={`${className} z-10`}
-                style={{
-                    ...style,
-                    display: "block",
-                    background: "rgba(0, 0, 0, 0.5)",
-                    borderRadius: "50%",
-                    padding: "12px",
-                    width: "40px",
-                    height: "40px",
-                    right: "-5px",
-                }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 cursor-pointer bg-white bg-opacity-70 p-2 rounded-full shadow-md hover:bg-opacity-100 transition-all duration-300"
                 onClick={onClick}
-            />
+                style={{ right: "-10px" }}
+            >
+                <ArrowBigRight size={24} className="text-blue-600" />
+            </div>
         );
     };
 
     const PrevArrow = (props) => {
-        const { className, style, onClick } = props;
+        const { onClick } = props;
         return (
             <div
-                className={`${className} z-10`}
-                style={{
-                    ...style,
-                    display: "block",
-                    background: "rgba(0, 0, 0, 0.5)",
-                    borderRadius: "50%",
-                    padding: "12px",
-                    width: "40px",
-                    height: "40px",
-                    left: "-5px",
-                }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 cursor-pointer bg-white bg-opacity-70 p-2 rounded-full shadow-md hover:bg-opacity-100 transition-all duration-300"
                 onClick={onClick}
-            />
+                style={{ left: "-10px" }}
+            >
+                <ArrowBigLeft size={24} className="text-blue-600" />
+            </div>
         );
     };
 
@@ -159,8 +146,8 @@ const ProductSlider = ({ id }) => {
     }
 
     return (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-100 p-6 rounded-xl shadow-sm border border-blue-100">
-            <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-100 p-6 rounded-xl outline-none focus:outline-none">
+            <div className="max-w-screen-xl mx-auto lg:px-16 md:px-8 sm:px-4">
                 <h2 className="text-2xl font-bold mb-6 text-gray-800">
                     {categoryInfo
                         ? categoryInfo.name
@@ -168,12 +155,14 @@ const ProductSlider = ({ id }) => {
                         ? "Featured Products"
                         : "Products"}
                 </h2>
-                <div className="relative mx-4 py-3">
+
+                <div className="relative mx-6 py-3">
                     <Slider {...settings}>
+                        {/* Add gap using margin on each product */}
                         {products.map((prod, index) => (
                             <div
                                 key={`product-${prod.id || index}`}
-                                className="px-3 py-2 hover:scale-105 transition duration-300"
+                                className="px-3 hover:scale-105 transition duration-300"
                             >
                                 <ProductCard data={prod} />
                             </div>

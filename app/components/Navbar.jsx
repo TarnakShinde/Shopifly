@@ -9,12 +9,13 @@ import {
     ShoppingBag,
     CircleUserRound,
     House,
+    LogOut,
 } from "lucide-react";
-import Button from "@mui/material/Button";
+import SearchBar from "./SearchBar";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Added import for toast styling
+import "react-toastify/dist/ReactToastify.css";
 import { createClient } from "../../utils/supabase/client";
 import { logoutAction } from "../logout/actions";
 
@@ -99,8 +100,6 @@ const Navbar = () => {
         return true;
     };
 
-    // Rest of the existing methods remain the same...
-
     useEffect(() => {
         async function getUser() {
             const {
@@ -116,21 +115,12 @@ const Navbar = () => {
         } = supabase.auth.onAuthStateChange((event, session) => {
             const currentUser = session?.user || null;
             setUser(currentUser);
-
-            // Show login/logout notifications
-            // if (event === "SIGNED_IN") {
-            //     notify("Successfully logged in");
-            //     window.location.reload();
-            // } else if (event === "SIGNED_OUT") {
-            //     notify("Successfully logged out");
-            //     window.location.reload();
-            // }
         });
 
         return () => subscription.unsubscribe();
     }, [supabase]);
 
-    // Prepare menu items based on user authentication state
+    // Menu Items based on user state
     const menuItems = user
         ? [
               <MenuItem key="profile" onClick={handleClose}>
@@ -180,57 +170,12 @@ const Navbar = () => {
                         </div>
 
                         {/* Search Bar Section */}
-                        <div className="flex-grow flex items-center justify-center">
-                            <div className="mt-1 flex items-center relative">
-                                <div className="relative w-full md:w-[300px] sm:w-[100px]  mx-auto">
-                                    <div className="">
-                                        <input
-                                            type="text"
-                                            value={query}
-                                            onChange={handleSearch}
-                                            placeholder="Search Anything.."
-                                            className="sm:w-[100px] w-full md:w-[300px] p-2 font-mono rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 py-3 px-4 bg-[var(--sixth-color)] text-[var(--forth-color)]"
-                                            ref={searchField}
-                                        />
-                                        <Search className="absolute right-3 bottom-3.5 w-5 h-5 text-gray-600 hover:text-gray-400 " />
-                                    </div>
-
-                                    {/* Suggestions Dropdown */}
-                                    {isOpen && results.length > 0 && (
-                                        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[400px] overflow-y-auto">
-                                            {results.map((result) => (
-                                                <div
-                                                    key={result.uniq_id}
-                                                    onClick={() =>
-                                                        handleProductClick(
-                                                            result.uniq_id
-                                                        )
-                                                    }
-                                                    className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-none"
-                                                >
-                                                    <div className="w-12 h-12 flex-shrink-0 bg-gray-50 rounded overflow-hidden">
-                                                        <img
-                                                            src={result.image1}
-                                                            alt={
-                                                                result.product_name
-                                                            }
-                                                            className="w-full h-full object-contain"
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm text-gray-900 truncate">
-                                                            {
-                                                                result.product_name
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                        <SearchBar
+                            results={results}
+                            handleSearch={handleSearch}
+                            handleProductClick={handleProductClick}
+                            query={query}
+                        />
 
                         {/* Links Section */}
                         <div className="hidden md:block">
@@ -333,96 +278,96 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Menu */}
-                {isClick && (
-                    <div id="mobile-menu" className="md:hidden">
-                        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 flex flex-col items-center text-center sm:mx-auto">
-                            <Link
-                                href="/"
-                                className="text-white hover:bg-white hover:text-black rounded-lg p-2 w-full text-center flex gap-2"
-                                onClick={() => setIsClick(false)}
-                            >
-                                <House size={25} />{" "}
-                                <span className="text-xl font-semibold">
-                                    Home
-                                </span>
-                            </Link>
-                            <Link
-                                href="/liked-products"
-                                className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
-                                onClick={() => setIsClick(false)}
-                            >
-                                <Heart size={25} />
-                                <span className="text-xl font-semibold">
-                                    Favorite
-                                </span>
-                            </Link>
-                            <Link
-                                href="/cart"
-                                className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
-                                onClick={(e) => {
-                                    if (!handleCartClick()) {
-                                        e.preventDefault();
-                                    }
-                                    setIsClick(false);
-                                }}
-                            >
-                                <ShoppingBag size={25} />
-                                <span className="text-xl font-semibold">
-                                    Cart
-                                </span>
-                            </Link>
-                            {user ? (
-                                <>
-                                    <Link
-                                        href="/profile"
-                                        className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
-                                        onClick={() => setIsClick(false)}
-                                    >
-                                        <CircleUserRound size={25} />
-                                        <span className="text-xl font-semibold">
-                                            Profile
-                                        </span>
-                                    </Link>
-                                    <button
-                                        onClick={() => {
-                                            logoutAction();
-                                            setIsClick(false);
-                                        }}
-                                        className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
-                                    >
-                                        <span className="text-xl font-semibold">
-                                            Logout
-                                        </span>
-                                    </button>
-                                </>
-                            ) : (
-                                [
-                                    <Link
-                                        key="login"
-                                        href="/login"
-                                        className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
-                                        onClick={() => setIsClick(false)}
-                                    >
-                                        <CircleUserRound size={25} />
-                                        <span className="text-xl font-semibold">
-                                            Login
-                                        </span>
-                                    </Link>,
-                                    <Link
-                                        key="signup"
-                                        href="/signup"
-                                        className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center"
-                                        onClick={() => setIsClick(false)}
-                                    >
-                                        <span className="text-xl font-semibold">
-                                            Sign Up
-                                        </span>
-                                    </Link>,
-                                ]
-                            )}
-                        </div>
+                <div
+                    id="mobile-menu"
+                    className={`md:hidden ${
+                        isClick ? "block" : "hidden"
+                    } transition-all duration-300 ease-in-out`}
+                >
+                    <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 flex flex-col items-center text-center sm:mx-auto">
+                        <Link
+                            href="/"
+                            className="text-white hover:bg-white hover:text-black rounded-lg p-2 w-full text-center flex gap-2 items-center"
+                            onClick={() => setIsClick(false)}
+                        >
+                            <House size={25} />
+                            <span className="text-xl font-semibold">Home</span>
+                        </Link>
+                        <Link
+                            href="/liked-products"
+                            className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center items-center"
+                            onClick={() => setIsClick(false)}
+                        >
+                            <Heart size={25} />
+                            <span className="text-xl font-semibold">
+                                Favorite
+                            </span>
+                        </Link>
+                        <Link
+                            href="/cart"
+                            className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center items-center"
+                            onClick={(e) => {
+                                if (!handleCartClick()) {
+                                    e.preventDefault();
+                                }
+                                setIsClick(false);
+                            }}
+                        >
+                            <ShoppingBag size={25} />
+                            <span className="text-xl font-semibold">Cart</span>
+                        </Link>
+
+                        {user ? (
+                            <>
+                                <Link
+                                    href="/profile"
+                                    className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center items-center"
+                                    onClick={() => setIsClick(false)}
+                                >
+                                    <CircleUserRound size={25} />
+                                    <span className="text-xl font-semibold">
+                                        Profile
+                                    </span>
+                                </Link>
+                                <button
+                                    onClick={() => {
+                                        logoutAction();
+                                        setIsClick(false);
+                                    }}
+                                    className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full "
+                                >
+                                    <LogOut size={25} />
+                                    <span className="text-xl font-semibold">
+                                        Logout
+                                    </span>
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    href="/login"
+                                    className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center items-center"
+                                    onClick={() => setIsClick(false)}
+                                >
+                                    <CircleUserRound size={25} />
+                                    <span className="text-xl font-semibold">
+                                        Login
+                                    </span>
+                                </Link>
+                                <Link
+                                    href="/signup"
+                                    className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center items-center"
+                                    onClick={() => setIsClick(false)}
+                                >
+                                    <CircleUserRound size={25} />
+                                    <span className="text-xl font-semibold">
+                                        Sign Up
+                                    </span>
+                                </Link>
+                            </>
+                        )}
                     </div>
-                )}
+                </div>
             </nav>
         </>
     );
