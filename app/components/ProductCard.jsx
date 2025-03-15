@@ -12,14 +12,16 @@ const ProductCard = ({ data, isLoggedIn }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [user, setUser] = useState(null);
     const [isHoveredHeart, setIsHoveredHeart] = useState(false);
-    const images = [data.image1, data.image2, data.image3, data.image4].filter(
-        Boolean
-    );
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const images = [
+        data?.image1,
+        data?.image2,
+        data?.image3,
+        data?.image4,
+    ].filter(Boolean);
     const [randomReviewCount, setRandomReviewCount] = useState(null);
-
     const router = useRouter();
     const supabase = createClient();
-
     const { addToCart } = useCart();
 
     // Rotate images every 3 seconds
@@ -31,63 +33,102 @@ const ProductCard = ({ data, isLoggedIn }) => {
                     (prevIndex) => (prevIndex + 1) % images.length
                 );
             }, 3000); // Change image every 3 seconds
-
             return () => clearInterval(interval); // Cleanup on unmount
         }
     }, [images.length]);
 
     // Generate a random review count for the product
     useEffect(() => {
-        // Generate a stable random review count based on product name
-        const productNameHash = data.product_name
-            .split("")
-            .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const count = 1000 + (productNameHash % 2000); // Between 1000 and 3000
-        setRandomReviewCount(count);
-    }, [data.product_name]);
+        if (data?.product_name) {
+            // Generate a stable random review count based on product name
+            const productNameHash = data.product_name
+                .split("")
+                .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const count = 1000 + (productNameHash % 2000); // Between 1000 and 3000
+            setRandomReviewCount(count);
+        }
+    }, [data?.product_name]);
 
-    //Generate the user object
+    // Get user object
     useEffect(() => {
         const getUser = async () => {
-            const { data: userData } = await supabase.auth.getUser();
-            const user = userData?.user;
-            setUser(userData?.user);
+            try {
+                const { data: userData, error } = await supabase.auth.getUser();
+                if (error) {
+                    console.error("Error fetching user:", error);
+                    return;
+                }
+                setUser(userData?.user || null);
+            } catch (err) {
+                console.error("Exception fetching user:", err);
+            }
         };
         getUser();
-    }, []);
+    }, [supabase.auth]);
 
-    const handleAddToCart = async (data) => {
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData?.user;
-        console.log("User object:", user);
-        if (!user) {
-            if (typeof window !== "undefined") {
-                sessionStorage.setItem(
-                    "redirectAfterAuth",
-                    window.location.pathname
-                );
+    const handleAddToCart = async (productData) => {
+        if (isAddingToCart) return; // Prevent multiple clicks
+
+        try {
+            setIsAddingToCart(true);
+
+            // Check if user is logged in
+            let currentUser = user;
+            if (!currentUser) {
+                // Try to get latest user data
+                const { data: userData, error } = await supabase.auth.getUser();
+
+                if (error || !userData?.user) {
+                    // Store redirect info
+                    if (typeof window !== "undefined") {
+                        sessionStorage.setItem(
+                            "redirectAfterAuth",
+                            window.location.pathname
+                        );
+                    }
+                    toast.error("Please login to add to cart");
+                    router.push("/login");
+                    return;
+                }
+
+                currentUser = userData.user;
+                setUser(currentUser);
             }
-            toast.error("Please login to add to cart");
-            router.push("/login");
-            return;
-        }
 
-        if (!data || !data.uniq_id) {
-            console.error("Data is missing unique_id:", data);
-            return;
+            // Validate product data
+            if (!productData || !productData.uniq_id) {
+                console.error("Invalid product data:", productData);
+                toast.error("Unable to add item to cart");
+                return;
+            }
+
+            const productToAdd = {
+                user_id: currentUser.id,
+                product_uniq_id: productData.uniq_id,
+                quantity: 1,
+                discounted_price: parseFloat(productData.discounted_price) || 0,
+                retail_price: parseFloat(productData.retail_price) || 0,
+                image1: productData.image1 || "/placeholder-image.png",
+                product_name: productData.product_name,
+                uniq_id: productData.uniq_id, // Ensure this ID is included
+            };
+
+            // Call the context method which should handle the Supabase insertion
+            const result = await addToCart(productToAdd);
+            if (result && result.error) {
+                console.error("Error adding to cart:", result.error);
+                toast.error("Failed to add item to cart. Please try again.");
+            } else {
+                toast.success("Added to cart");
+            }
+        } catch (err) {
+            console.error("Exception adding to cart:", err);
+            toast.error("An error occurred. Please try again.");
+        } finally {
+            setIsAddingToCart(false);
         }
-        const productToAdd = {
-            user_id: user.id,
-            product_uniq_id: data.uniq_id,
-            quantity: 1,
-            discounted_price: data.discounted_price || 0, // Ensure a valid number
-            image1: data.image1 || "/placeholder-image.png", // Provide fallback image
-            product_name: data.product_name,
-        };
-        console.log("Adding to cart:", productToAdd);
-        addToCart(productToAdd);
-        toast.success("Added to cart");
     };
+
     // If data is not available, show a loading state
     if (!data || randomReviewCount === null) {
         return (
@@ -131,6 +172,9 @@ const ProductCard = ({ data, isLoggedIn }) => {
                         priority
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         className="object-contain transition-all duration-300"
+                        onError={(e) => {
+                            e.target.src = "/placeholder-image.jpg";
+                        }}
                     />
                 </Link>
                 <button
@@ -146,17 +190,15 @@ const ProductCard = ({ data, isLoggedIn }) => {
                                     window.location.pathname
                                 );
                             }
-                            // Redirect to login page
+                            toast.error("Please login to add to favorites");
                             router.push("/login");
                             return;
                         }
-
                         const result = await handleAddToFavorites(
                             data.uniq_id,
                             user
                         );
-
-                        if (result.requiresAuth) {
+                        if (result?.requiresAuth) {
                             // Redirect to login page
                             router.push("/login");
                         }
@@ -185,13 +227,11 @@ const ProductCard = ({ data, isLoggedIn }) => {
                     </svg>
                 </button>
             </div>
-
             {/* Product Details */}
             <div className="mt-3 text-center flex-grow flex flex-col">
                 <h2 className="text-sm font-semibold text-gray-700 line-clamp-2 mb-2">
                     {data.product_name}
                 </h2>
-
                 <div className="flex items-center justify-center gap-2 mb-2">
                     <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-md">
                         {data.productrating || "4.0"}
@@ -200,7 +240,6 @@ const ProductCard = ({ data, isLoggedIn }) => {
                         {randomReviewCount.toLocaleString()} reviews
                     </span>
                 </div>
-
                 <div className="mb-auto">
                     <span className="text-lg font-bold text-gray-800">
                         ₹{Number(data.discounted_price).toLocaleString()}
@@ -218,13 +257,17 @@ const ProductCard = ({ data, isLoggedIn }) => {
                         </>
                     )}
                 </div>
-
                 <div className="flex justify-center gap-2 mt-2">
                     <button
-                        className="flex-1 bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors"
+                        className={`flex-1 ${
+                            isAddingToCart
+                                ? "bg-gray-400"
+                                : "bg-orange-600 hover:bg-orange-500"
+                        } text-white px-3 py-1.5 rounded-lg font-semibold text-sm transition-colors`}
                         onClick={() => handleAddToCart(data)}
+                        disabled={isAddingToCart}
                     >
-                        Add to Cart
+                        {isAddingToCart ? "Adding..." : "Add to Cart"}
                     </button>
                 </div>
             </div>

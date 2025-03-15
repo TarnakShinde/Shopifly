@@ -13,6 +13,7 @@ const ProductDetail = ({ product }) => {
     const [openIndex, setOpenIndex] = useState(null);
     const [user, setUser] = useState(null);
     const [isHoveredHeart, setIsHoveredHeart] = useState(false);
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
     const { addToCart } = useCart();
     const supabase = createClient();
     const router = useRouter();
@@ -57,37 +58,69 @@ const ProductDetail = ({ product }) => {
             />
         </svg>
     );
-    const handleAddToCart = async (data) => {
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData?.user;
-        console.log("User object:", user);
-        if (!user) {
-            if (typeof window !== "undefined") {
-                sessionStorage.setItem(
-                    "redirectAfterAuth",
-                    window.location.pathname
-                );
-            }
-            toast.error("Please login to add to cart");
-            router.push("/login");
-            return;
-        }
+    const handleAddToCart = async (productData) => {
+        if (isAddingToCart) return; // Prevent multiple clicks
 
-        if (!data || !data.uniq_id) {
-            console.error("Data is missing unique_id:", data);
-            return;
+        try {
+            setIsAddingToCart(true);
+
+            // Check if user is logged in
+            let currentUser = user;
+
+            if (!currentUser) {
+                // Try to get latest user data
+                const { data: userData, error } = await supabase.auth.getUser();
+
+                if (error || !userData?.user) {
+                    // Store redirect info
+                    if (typeof window !== "undefined") {
+                        sessionStorage.setItem(
+                            "redirectAfterAuth",
+                            window.location.pathname
+                        );
+                    }
+                    toast.error("Please login to add to cart");
+                    router.push("/login");
+                    return;
+                }
+
+                currentUser = userData.user;
+                setUser(currentUser);
+            }
+
+            // Validate product data
+            if (!productData || !productData.uniq_id) {
+                console.error("Invalid product data:", productData);
+                toast.error("Unable to add item to cart");
+                return;
+            }
+
+            const productToAdd = {
+                user_id: currentUser.id,
+                product_uniq_id: productData.uniq_id,
+                quantity: 1,
+                discounted_price: parseFloat(productData.discounted_price) || 0,
+                retail_price: parseFloat(productData.retail_price) || 0,
+                image1: productData.image1 || "/placeholder-image.png",
+                product_name: productData.product_name,
+                uniq_id: productData.uniq_id, // Ensure this ID is included
+            };
+
+            // Call the context method which should handle the Supabase insertion
+            const result = await addToCart(productToAdd);
+
+            if (result && result.error) {
+                console.error("Error adding to cart:", result.error);
+                toast.error("Failed to add item to cart. Please try again.");
+            } else {
+                toast.success("Added to cart");
+            }
+        } catch (err) {
+            console.error("Exception adding to cart:", err);
+            toast.error("An error occurred. Please try again.");
+        } finally {
+            setIsAddingToCart(false);
         }
-        const productToAdd = {
-            user_id: user.id,
-            product_uniq_id: data.uniq_id,
-            quantity: 1,
-            discounted_price: data.discounted_price || 0, // Ensure a valid number
-            image1: data.image1 || "/placeholder-image.png", // Provide fallback image
-            product_name: data.product_name,
-        };
-        console.log("Adding to cart:", productToAdd);
-        addToCart(productToAdd);
-        toast.success("Added to cart");
     };
     // Get user details
     useEffect(() => {
@@ -209,8 +242,9 @@ const ProductDetail = ({ product }) => {
                     <button
                         className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
                         onClick={() => handleAddToCart(product)}
+                        disabled={isAddingToCart}
                     >
-                        Add to Cart
+                        {isAddingToCart ? "Adding..." : "Add to Cart"}
                     </button>
                 </div>
                 {/* Specifications */}

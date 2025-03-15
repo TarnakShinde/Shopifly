@@ -128,6 +128,11 @@ const Navbar = () => {
                       Profile
                   </Link>
               </MenuItem>,
+              <MenuItem key="order" onClick={handleClose}>
+                  <Link href={`/myOrder`} className="w-full block">
+                      My Order
+                  </Link>
+              </MenuItem>,
               <MenuItem
                   key="logout"
                   onClick={() => {

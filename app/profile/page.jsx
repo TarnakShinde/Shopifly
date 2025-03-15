@@ -166,7 +166,7 @@ const ProfilePage = () => {
                             </label>
                             <label className="block text-gray-700 text-sm font-bold mb-2">
                                 {profile.userid}{" "}
-                            </label>>
+                            </label>
                             <p className="text-xs text-gray-500 mt-1">
                                 User ID cannot be changed
                             </p>
