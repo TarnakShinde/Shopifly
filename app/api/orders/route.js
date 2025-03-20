@@ -23,6 +23,7 @@ export async function GET(request) {
         const { count, error: countError } = await supabase
             .from("orders")
             .select("*", { count: "exact" })
+            .order("created_at", { ascending: false })
             .eq("user_id", userId);
 
         if (countError) throw countError;
@@ -75,127 +76,6 @@ export async function GET(request) {
         );
     }
 }
-
-// export async function PATCH(request) {
-//     try {
-//         const body = await request.json();
-//         const { orderId, userId, status } = body;
-
-//         if (!orderId || !userId || !status) {
-//             return NextResponse.json(
-//                 {
-//                     success: false,
-//                     message: "Order ID, user ID, and status are required",
-//                 },
-//                 { status: 400 }
-//             );
-//         }
-
-//         // First verify this order belongs to this user
-//         const { data: orderCheck, error: checkError } = await supabase
-//             .from("orders")
-//             .select("id")
-//             .eq("id", orderId)
-//             .eq("user_id", userId);
-
-//         if (checkError || !orderCheck) {
-//             return NextResponse.json(
-//                 {
-//                     success: false,
-//                     message: "Order not found or does not belong to this user",
-//                 },
-//                 { status: 403 }
-//             );
-//         }
-
-//         // Update the order
-//         const { data, error } = await supabase
-//             .from("orders")
-//             .update({ status: "cancelled" })
-//             .eq("id", orderId)
-//             .eq("user_id", userId)
-//             .select();
-//         console.log("Updated order data:", data);
-
-//         if (error) throw error;
-
-//         return NextResponse.json({
-//             success: true,
-//             message: "Order updated successfully",
-//             data,
-//         });
-//     } catch (error) {
-//         console.error("Error updating order:", error);
-//         return NextResponse.json(
-//             {
-//                 success: false,
-//                 message: error.message || "Failed to update order",
-//             },
-//             { status: 500 }
-//         );
-//     }
-// }
-
-// export async function PATCH(request) {
-//     try {
-//         const body = await request.json();
-//         const { orderId, userId, status } = body;
-
-//         if (!orderId || !userId || !status) {
-//             return NextResponse.json(
-//                 {
-//                     success: false,
-//                     message: "Order ID, user ID, and status are required",
-//                 },
-//                 { status: 400 }
-//             );
-//         }
-
-//         // Verify order belongs to this user
-//         const { data: orderCheck, error: checkError } = await supabase
-//             .from("orders")
-//             .select("*")
-//             .eq("id", String(orderId))
-//             .eq("user_id", String(userId));
-//         console.log("Order check data:", orderCheck);
-//         if (checkError) {
-//             return NextResponse.json(
-//                 {
-//                     success: false,
-//                     message: "Order not found or does not belong to this user",
-//                 },
-//                 { status: 403 }
-//             );
-//         }
-
-//         // Update the order
-//         const { data, error } = await supabase
-//             .from("orders")
-//             .update({ status: status })
-//             .eq("id", String(orderId))
-//             .eq("user_id", String(userId))
-//             .select();
-//         console.log("Updated order data:", data);
-//         if (error) {
-//             throw new Error("Failed to update order status");
-//         }
-
-//         return NextResponse.json({
-//             success: true,
-//             message: "Order updated successfully",
-//             data,
-//         });
-//     } catch (error) {
-//         console.error("Error updating order:", error);
-//         return NextResponse.json(
-//             {
-//                 success: false,
-//                 message: error.message || "Failed to update order",
-//             },
-//             { status: 500 }
-//         );
-//     }
-// }
 export async function PATCH(request) {
     try {
         const body = await request.json();

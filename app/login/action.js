@@ -1,29 +1,30 @@
 // app/login/actions.js
 "use server";
-import { createServerClient } from "@supabase/ssr";
+// import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createClient } from "../../utils/supabase/server";
 
 export async function login(formData) {
-    const cookieStore = await cookies();
+    // const cookieStore = await cookies();
 
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        {
-            cookies: {
-                get(name) {
-                    return cookieStore.get(name)?.value;
-                },
-                set(name, value, options) {
-                    cookieStore.set({ name, value, ...options });
-                },
-                remove(name, options) {
-                    cookieStore.delete({ name, ...options });
-                },
-            },
-        }
-    );
-
+    // const supabase = createServerClient(
+    //     process.env.NEXT_PUBLIC_SUPABASE_URL,
+    //     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    //     {
+    //         cookies: {
+    //             get(name) {
+    //                 return cookieStore.get(name)?.value;
+    //             },
+    //             set(name, value, options) {
+    //                 cookieStore.set({ name, value, ...options });
+    //             },
+    //             remove(name, options) {
+    //                 cookieStore.delete({ name, ...options });
+    //             },
+    //         },
+    //     }
+    // );
+    const supabase = createClient();
     const data = {
         email: formData.get("email"),
         password: formData.get("password"),

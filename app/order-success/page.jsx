@@ -1,14 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "../../lib/supabase";
 
 export default function OrderSuccessPage() {
-    const router = useRouter();
     const [animationComplete, setAnimationComplete] = useState(false);
-    const [user, setUser] = useState(null);
 
     useEffect(() => {
         // Trigger animation complete after 2 seconds
@@ -18,29 +14,6 @@ export default function OrderSuccessPage() {
 
         return () => clearTimeout(timer);
     }, []);
-    useEffect(() => {
-        const sendEmail = async () => {
-            try {
-                const { data: user } = await supabase.auth.getUser();
-                setUser(user);
-                const response = await fetch("/api/orderConfirmation", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        to: `${user.email}`, // Add your email address here
-                        subject: "Order Confirmation", // Email subject
-                        text: "Your order has been placed successfully.", // Email body
-                    }),
-                });
-            } catch (error) {
-                console.error("Failed to send email", error);
-            }
-        };
-        sendEmail();
-    }, []);
-
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">

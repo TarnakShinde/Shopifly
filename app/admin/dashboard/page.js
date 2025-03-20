@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../../../lib/supabase";
 import Dashboard from "./Dashboard";
 
 export async function fetchDashboardData() {

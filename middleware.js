@@ -1,18 +1,74 @@
-import { updateSession } from "./utils/supabase/middleware";
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(request) {
-    return await updateSession(request);
+    // Create a response object
+    let response = NextResponse.next();
+
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        {
+            cookies: {
+                get(name) {
+                    return request.cookies.get(name)?.value;
+                },
+                set(name, value, options) {
+                    response.cookies.set({
+                        name,
+                        value,
+                        ...options,
+                    });
+                },
+                remove(name, options) {
+                    response.cookies.delete({
+                        name,
+                        ...options,
+                    });
+                },
+            },
+        }
+    );
+
+    // Refresh session if available
+    await supabase.auth.getSession();
+
+    // Get user if session exists
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    // Allow browsing without login by default
+    if (user) {
+        return response;
+    }
+
+    // Protected routes logic
+    if (request.nextUrl.pathname.startsWith("/cart")) {
+        // Redirect to login page with return URL
+        const url = new URL("/login", request.url);
+        url.searchParams.set("redirect", request.nextUrl.pathname);
+        return NextResponse.redirect(url);
+    }
+
+    // API routes that require auth
+    if (
+        request.nextUrl.pathname.startsWith("/api/cart") &&
+        (request.method === "POST" || request.method === "PUT")
+    ) {
+        return NextResponse.json(
+            { error: "Login required to add items to cart" },
+            { status: 401 }
+        );
+    }
+
+    return response;
 }
 
 export const config = {
     matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
-         */
+        "/cart",
+        "/api/cart/:path*",
         "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
     ],
 };

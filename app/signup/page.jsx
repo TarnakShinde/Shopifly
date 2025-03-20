@@ -4,7 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import bcrypt from "bcryptjs";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "../../utils/supabase/client";
 
 const strengthLabels = ["weak", "medium", "medium", "strong"];
 
@@ -130,7 +130,7 @@ const SignUp = () => {
                 <div className="sm:mx-auto sm:w-full sm:max-w-sm">
                     <div className="mx-auto h-10 w-auto text-4xl text-center font-bold">
                         {" "}
-                        SHOPI<span className="text-green-500">FLY</span>
+                        SHOPI<span className="text-primary">FLY</span>
                     </div>
                     <h2 className="mt-10 text-center text-2xl/9 tracking-tight text-gray-900">
                         Register to Shopifly

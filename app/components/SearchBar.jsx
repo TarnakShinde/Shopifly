@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
+import Image from "next/image";
 
 const SearchBar = ({ results, handleSearch, handleProductClick, query }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -63,15 +64,12 @@ const SearchBar = ({ results, handleSearch, handleProductClick, query }) => {
                                 className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-none"
                             >
                                 <div className="w-12 h-12 flex-shrink-0 bg-gray-50 rounded overflow-hidden">
-                                    <img
+                                    <Image
                                         src={result.image1}
                                         alt={result.product_name}
-                                        className="w-full h-full object-contain"
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src =
-                                                "/default-product-image.png";
-                                        }}
+                                        width={48}
+                                        height={48}
+                                        className="object-contain"
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">

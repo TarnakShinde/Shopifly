@@ -25,7 +25,7 @@ export function AuthProvider({ children }) {
             // Set up auth listener
             const {
                 data: { subscription },
-            } = await supabase.auth.onAuthStateChange((_event, session) => {
+            } = supabase.auth.onAuthStateChange((_event, session) => {
                 setUser(session?.user || null);
             });
 

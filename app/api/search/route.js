@@ -1,6 +1,6 @@
 // app/api/search/route.js
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../../../lib/supabase";
 
 export async function GET(request) {
     try {
@@ -16,30 +16,20 @@ export async function GET(request) {
             );
         }
 
-        // Initialize Supabase client inside the handler to ensure environment variables are loaded
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-        // Validate environment variables
-        if (!supabaseUrl || !supabaseKey) {
-            console.error("Missing Supabase environment variables");
-            return NextResponse.json(
-                { error: "Server configuration error" },
-                { status: 500 }
-            );
-        }
-
         // Create Supabase client with proper error handling
-        const supabase = createClient(supabaseUrl, supabaseKey, {
-            auth: { persistSession: false },
-            global: { fetch: fetch },
-        });
 
-        // Perform the database query
+        // Use the full-text search index with tsquery
         const { data, error } = await supabase
             .from("products")
             .select("*")
-            .ilike("product_name", `%${query}%`)
+            .textSearch(
+                "product_name || ' ' || description",
+                `${query.split(" ").join(" & ")}`,
+                {
+                    type: "websearch",
+                    config: "english",
+                }
+            )
             .limit(10);
 
         // Handle database errors

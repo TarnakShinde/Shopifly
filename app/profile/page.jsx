@@ -28,6 +28,7 @@ const ProfilePage = () => {
         checkAuth();
     }, [router]);
 
+    //! Function to fetch user profile
     const fetchProfile = async (userId) => {
         try {
             setLoading(true);
@@ -35,7 +36,7 @@ const ProfilePage = () => {
             const { data, error } = await supabase
                 .from("profiles")
                 .select(
-                    "userid, userName, userEmail, userAddress, userGender, userAge"
+                    "userid, userName, userEmail, userAddress, userGender, userAge, userPhoneNumber"
                 )
                 .eq("userid", userId)
                 .single();
@@ -60,33 +61,67 @@ const ProfilePage = () => {
         });
     };
 
+    const validatePhoneNumber = (phoneNumber) => {
+        // Check if phoneNumber exists and is not undefined before validating
+        if (!phoneNumber) return false;
+        const phoneRegex = /^[0-9]{10}$/; // A regex to match exactly 10 digits
+        return phoneRegex.test(phoneNumber);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validatePhoneNumber(formData.userPhoneNumber)) {
+            setError("Please enter a valid 10-digit phone number.");
+            return;
+        }
+
+        if (!formData.userName || !formData.userEmail) {
+            setError("Please fill in all required fields.");
+            return;
+        }
 
         try {
             setLoading(true);
             setError(null);
 
+            // Create a copy of formData to modify
+            const dataToUpdate = { ...formData };
+
+            // Convert phone number to integer if it's a constraint requirement
+            if (dataToUpdate.userPhoneNumber) {
+                dataToUpdate.userPhoneNumber = parseInt(
+                    dataToUpdate.userPhoneNumber,
+                    10
+                );
+
+                // Check if conversion was successful
+                if (isNaN(dataToUpdate.userPhoneNumber)) {
+                    throw new Error("Phone number must contain only digits");
+                }
+            }
+
             const { error } = await supabase
                 .from("profiles")
-                .update(formData)
+                .update(dataToUpdate)
                 .eq("userid", profile.userid);
 
             if (error) throw error;
 
-            setProfile(formData);
+            setProfile(dataToUpdate);
             setSuccess("Profile updated successfully!");
             setEditing(false);
 
             setTimeout(() => setSuccess(null), 3000);
         } catch (error) {
             console.error("Error updating profile:", error.message);
-            setError("Failed to update profile");
+            setError(`Failed to update profile: ${error.message}`);
         } finally {
             setLoading(false);
         }
     };
 
+    //! Function to handle password reset
     const handleResetPassword = async () => {
         try {
             const response = await fetch("/api/update-password", {
@@ -138,6 +173,7 @@ const ProfilePage = () => {
                             onClick={() => {
                                 setEditing(false);
                                 setFormData(profile);
+                                console.log(profile);
                             }}
                             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition"
                         >
@@ -181,7 +217,9 @@ const ProfilePage = () => {
                         ].map((key) => (
                             <div key={key} className="mb-4">
                                 <label className="block text-gray-700 text-sm font-bold mb-2 capitalize">
-                                    {key.replace("_", " ")}
+                                    {key
+                                        .replace("user", "")
+                                        .replace(/([A-Z])/g, " $1")}
                                 </label>
                                 <input
                                     type={key === "userAge" ? "number" : "text"}
@@ -215,6 +253,29 @@ const ProfilePage = () => {
                                 <option value="Female">Female</option>
                                 <option value="Others">Others</option>
                             </select>
+                        </div>
+
+                        {/* Phone Number */}
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                                Phone Number
+                            </label>
+                            <input
+                                name="userPhoneNumber"
+                                type="number"
+                                value={formData.userPhoneNumber || ""}
+                                placeholder="9167XXXXXX"
+                                onChange={handleChange}
+                                readOnly={!editing}
+                                maxLength={10}
+                                className={`shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
+                                    !editing ? "bg-gray-100" : ""
+                                }`}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                Enter a 10-digit number without spaces or
+                                special characters
+                            </p>
                         </div>
 
                         {/* Reset Password Button */}

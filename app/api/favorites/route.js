@@ -1,7 +1,3 @@
-// Example API route implementations - adapt these to your backend framework
-// This assumes a Next.js API route structure
-
-// File: /pages/api/favorites/add.js
 import { db } from '../../../lib/db'; // Your database connection
 
 export default async function handler(req, res) {

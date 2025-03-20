@@ -251,7 +251,8 @@ export default function MyOrdersPage() {
                                                     order.status
                                                 )}`}
                                             >
-                                                {order.status || "Unknown"}
+                                                {order.status.toUpperCase() ||
+                                                    "Unknown"}
                                             </span>
                                         </div>
                                     </div>
@@ -374,8 +375,8 @@ export default function MyOrdersPage() {
                                         <div className="mt-4 flex justify-end space-x-3">
                                             {order.id && (
                                                 <Link
-                                                    href={`/order-details/${order.id}`}
-                                                    className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                                                    href={`/orders/${order.id}`}
+                                                    className="text-sm font-medium text-blue-600 hover:text-blue-500 border border-blue-600 bg-blue-50 hover:bg-blue-60 px-2 py-1 rounded"
                                                 >
                                                     View Order Details
                                                 </Link>
@@ -386,7 +387,7 @@ export default function MyOrdersPage() {
                                                     order.status.toLowerCase() ===
                                                         "pending") && (
                                                     <button
-                                                        className="text-sm font-medium text-red-600 hover:text-red-500"
+                                                        className="text-sm font-medium text-red-600 hover:text-red-500 border border-red-600 bg-red-50 px-2 py-1 rounded hover:bg-red-60"
                                                         onClick={() =>
                                                             handleCancelOrder(
                                                                 order.id

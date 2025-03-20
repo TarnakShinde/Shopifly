@@ -33,7 +33,7 @@ const Cart = () => {
             <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg text-center">
                 <p className="text-gray-500 mb-4">Your cart is empty</p>
                 <button
-                    onClick={() => router.push("/products")}
+                    onClick={() => router.push("/")}
                     className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
                 >
                     Browse Products

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
     Heart,
     Search,
@@ -42,6 +43,8 @@ const Navbar = () => {
 
     const supabase = createClient();
 
+    const pathname = usePathname();
+    const isOnDashboard = pathname === "/dashboard";
     const open = Boolean(anchorEl);
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);

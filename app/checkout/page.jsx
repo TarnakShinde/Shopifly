@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import Image from "next/image";
 
 export default function CheckoutPage() {
     const router = useRouter();
     const [cartItems, setCartItems] = useState([]);
     const [user, setUser] = useState(null);
+    const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
     const [shippingDetails, setShippingDetails] = useState({
         fullName: "",
         email: "",
@@ -16,19 +18,25 @@ export default function CheckoutPage() {
         city: "",
         zip: "",
     });
+
     const [error, setError] = useState("");
+    const [isProcessing, setIsProcessing] = useState(false);
+    const totalPrice = cartItems.reduce((total, item) => {
+        return (
+            total +
+            (Number(item.discounted_price) || 0) * (Number(item.quantity) || 1)
+        );
+    }, 0);
 
     useEffect(() => {
         async function fetchUser() {
             const {
                 data: { user },
             } = await supabase.auth.getUser();
-            console.log("User ka detail:", user);
             if (user) {
                 setUser(user);
                 setShippingDetails((prev) => ({ ...prev, email: user.email }));
             } else {
-                // Redirect to login if no user is found
                 router.push("/login");
             }
         }
@@ -36,7 +44,6 @@ export default function CheckoutPage() {
         fetchUser();
     }, [router]);
 
-    // Fetch cart items on page load
     useEffect(() => {
         async function fetchCartItems() {
             if (!user) return;
@@ -46,8 +53,7 @@ export default function CheckoutPage() {
                 .eq("user_id", user.id);
             if (!error && data) {
                 setCartItems(data);
-            } else if (error) {
-                console.error("Error fetching cart items:", error);
+            } else {
                 setError("Failed to load cart items");
             }
         }
@@ -56,7 +62,7 @@ export default function CheckoutPage() {
             fetchCartItems();
         }
     }, [user]);
-    // Handle checkout process
+
     async function handleCheckout() {
         if (
             !shippingDetails.fullName ||
@@ -69,36 +75,86 @@ export default function CheckoutPage() {
             return;
         }
 
+        setIsProcessing(true);
+        setError("");
+
         try {
-            // Calculate total price safely
-            const totalPrice = cartItems.reduce((total, item) => {
-                const price = Number(item.discounted_price) || 0;
-                const quantity = Number(item.quantity) || 1;
-                return total + price * quantity;
-            }, 0);
+            // Begin a transaction to ensure all operations succeed or fail together
+            // First, create the order
+            const { data: orderData, error: orderError } = await supabase
+                .from("orders")
+                .insert([
+                    {
+                        user_id: user.id,
+                        products: cartItems,
+                        total_price: totalPrice,
+                        shipping_details: shippingDetails,
+                        paymentMode: paymentMethod,
+                        status: "pending",
+                    },
+                ])
+                .select();
 
-            const { data, error } = await supabase.from("orders").insert([
-                {
-                    user_id: user.id,
-                    products: cartItems,
-                    total_price: totalPrice,
-                    shipping_details: shippingDetails,
-                    status: "pending",
-                },
-            ]);
-
-            if (error) {
-                console.error("Order creation error:", error);
-                setError("Checkout failed. Please try again.");
-            } else {
-                // Clear the cart after successful order
-                await supabase.from("cart").delete().eq("user_id", user.id);
-
-                router.push("/order-success");
+            if (orderError) {
+                throw new Error(
+                    "Failed to create order: " + orderError.message
+                );
             }
+
+            // Now update the stock for each product
+            const stockUpdatePromises = cartItems.map(async (item) => {
+                // Get current stock
+                const { data: productData, error: productError } =
+                    await supabase
+                        .from("products")
+                        .select("productstockquantity")
+                        .eq("uniq_id", item.uniq_id)
+                        .single();
+
+                if (productError) {
+                    throw new Error(
+                        `Failed to fetch product ${item.uniq_id}: ${productError.message}`
+                    );
+                }
+
+                const currentStock = productData.productstockquantity;
+                const newStock = Math.max(0, currentStock - item.quantity);
+
+                // Update the stock
+                const { error: updateError } = await supabase
+                    .from("products")
+                    .update({ productstockquantity: newStock })
+                    .eq("uniq_id", item.uniq_id);
+
+                if (updateError) {
+                    throw new Error(
+                        `Failed to update stock for ${item.uniq_id}: ${updateError.message}`
+                    );
+                }
+            });
+
+            // Wait for all stock updates to complete
+            await Promise.all(stockUpdatePromises);
+
+            // Clear the cart
+            const { error: cartDeleteError } = await supabase
+                .from("cart")
+                .delete()
+                .eq("user_id", user.id);
+
+            if (cartDeleteError) {
+                throw new Error(
+                    "Failed to clear cart: " + cartDeleteError.message
+                );
+            }
+
+            // Redirect to success page
+            router.push("/order-success");
         } catch (err) {
-            console.error("Checkout exception:", err);
-            setError("An unexpected error occurred. Please try again.");
+            console.error("Checkout error:", err);
+            setError("An error occurred during checkout: " + err.message);
+        } finally {
+            setIsProcessing(false);
         }
     }
 
@@ -119,7 +175,6 @@ export default function CheckoutPage() {
                 </div>
             ) : (
                 <div className="grid md:grid-cols-2 gap-6">
-                    {/* Order Summary */}
                     <div>
                         <h2 className="text-xl font-semibold">Order Summary</h2>
                         <div className="mt-4 space-y-4">
@@ -128,10 +183,13 @@ export default function CheckoutPage() {
                                     key={item.cart_id || item.uniq_id}
                                     className="flex items-center space-x-4 border p-4 rounded-lg"
                                 >
-                                    <img
+                                    <Image
                                         src={item.image1}
-                                        alt={item.product_name}
-                                        className="w-16 h-16 object-contain"
+                                        alt={"Product Image"}
+                                        priority
+                                        width={64}
+                                        height={64}
+                                        className="object-contain bg-gray-200"
                                     />
                                     <div>
                                         <p className="font-medium">
@@ -144,51 +202,15 @@ export default function CheckoutPage() {
                                     </div>
                                 </div>
                             ))}
-
-                            <div className="border-t pt-4 mt-4">
-                                <div className="flex justify-between">
-                                    <span>Subtotal:</span>
-                                    <span>
-                                        ₹
-                                        {cartItems
-                                            .reduce(
-                                                (total, item) =>
-                                                    total +
-                                                    (Number(
-                                                        item.discounted_price
-                                                    ) || 0) *
-                                                        (Number(
-                                                            item.quantity
-                                                        ) || 1),
-                                                0
-                                            )
-                                            .toFixed(2)}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between font-bold mt-2">
-                                    <span>Total:</span>
-                                    <span>
-                                        ₹
-                                        {cartItems
-                                            .reduce(
-                                                (total, item) =>
-                                                    total +
-                                                    (Number(
-                                                        item.discounted_price
-                                                    ) || 0) *
-                                                        (Number(
-                                                            item.quantity
-                                                        ) || 1),
-                                                0
-                                            )
-                                            .toFixed(2)}
-                                    </span>
-                                </div>
+                        </div>
+                        <div className="border-t pt-4">
+                            <div className="flex justify-between font-bold">
+                                <span>Total Price:</span>
+                                <span>₹{totalPrice.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Shipping Details */}
                     <div>
                         <h2 className="text-xl font-semibold">
                             Shipping Details
@@ -272,11 +294,45 @@ export default function CheckoutPage() {
                                 className="w-full p-2 border rounded"
                                 required
                             />
+
+                            <div className="space-y-2">
+                                <label className="block font-semibold">
+                                    Payment Method
+                                </label>
+                                <select
+                                    value={paymentMethod}
+                                    onChange={(e) =>
+                                        setPaymentMethod(e.target.value)
+                                    }
+                                    className="w-full p-2 border rounded"
+                                >
+                                    <option value="Cash on Delivery">
+                                        Cash on Delivery
+                                    </option>
+                                    <option
+                                        value="credit_card disabled"
+                                        disabled
+                                    >
+                                        Credit Card Coming Soon
+                                    </option>
+                                    <option
+                                        value="debit_card disabled"
+                                        disabled
+                                    >
+                                        Debit Card Coming Soon
+                                    </option>
+                                </select>
+                            </div>
                             <button
                                 type="submit"
-                                className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition"
+                                disabled={isProcessing}
+                                className={`w-full ${
+                                    isProcessing
+                                        ? "bg-gray-400"
+                                        : "bg-blue-600 hover:bg-blue-700"
+                                } text-white p-2 rounded transition`}
                             >
-                                Place Order
+                                {isProcessing ? "Processing..." : "Place Order"}
                             </button>
                         </form>
                     </div>
