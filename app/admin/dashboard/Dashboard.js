@@ -67,6 +67,7 @@ export default function Dashboard() {
     const [orders, setOrders] = useState([]);
     const [editingProduct, setEditingProduct] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
     const productsPerPage = 25;
 
@@ -361,6 +362,80 @@ export default function Dashboard() {
         }
     };
 
+    // Function to format date
+    const formatDate = (dateString) => {
+        console.log("Date string:", dateString); // Debug log
+        if (!dateString) return "N/A";
+
+        try {
+            const date = new Date(dateString);
+
+            // Format as DD/MM/YYYY
+            const day = date.getDate().toString().padStart(2, "0");
+            const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Months are 0-indexed
+            const year = date.getFullYear();
+
+            return `${day}/${month}/${year}`;
+        } catch (e) {
+            console.error("Date formatting error:", e);
+            console.log("Original date string:", dateString);
+            return dateString; // Return original string if formatting fails
+        }
+    };
+
+    // Function to format currency
+    const formatCurrency = (amount) => {
+        if (amount === undefined || amount === null) return "₹0.00";
+
+        try {
+            return new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "INR",
+            }).format(amount);
+        } catch (e) {
+            console.error("Currency formatting error:", e);
+            return `${amount}`; // Fallback formatting
+        }
+    };
+
+    // Add this function to your component
+    const updateOrderStatus = async (orderId, newStatus) => {
+        try {
+            // Set loading state if needed
+            setLoading(true);
+
+            // Make API call to update order status
+            const response = await fetch(`/api/orders/${orderId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to update order status");
+            }
+
+            // Update local state to reflect the change immediately
+            setOrders(
+                orders.map((order) =>
+                    order.id === orderId
+                        ? { ...order, status: newStatus }
+                        : order
+                )
+            );
+
+            // Show success notification
+            toast.success(`Order #${orderId} status updated to ${newStatus}`);
+        } catch (error) {
+            console.error("Error updating order status:", error);
+            toast.error("Failed to update order status. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -374,7 +449,7 @@ export default function Dashboard() {
 
     return (
         <>
-            <div className="container mx-auto px-4 py-8 ">
+            <div className="container mx-auto px-4 py-8 min-h-screen">
                 <div className="bg-white shadow-md rounded-lg p-6 mb-8">
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 text-center">
                         Admin Dashboard
@@ -452,7 +527,7 @@ export default function Dashboard() {
 
                     {/* Add Product Form */}
                     {currentAction === "addProduct" && (
-                        <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="bg-gray-50 p-4 rounded-lg shadow-md mb-6">
                             <h2 className="text-xl font-semibold mb-4">
                                 Add New Product
                             </h2>
@@ -1274,7 +1349,6 @@ export default function Dashboard() {
                             <h2 className="text-xl font-semibold mb-4">
                                 Order Analytics
                             </h2>
-
                             {/* Orders Chart */}
                             <div className="mb-8">
                                 <h3 className="text-lg font-medium mb-3">
@@ -1337,13 +1411,16 @@ export default function Dashboard() {
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Status
                                                 </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Actions
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200">
                                             {orders.length === 0 ? (
                                                 <tr>
                                                     <td
-                                                        colSpan="5"
+                                                        colSpan="6"
                                                         className="px-6 py-4 text-center text-gray-500"
                                                     >
                                                         No orders found
@@ -1362,13 +1439,14 @@ export default function Dashboard() {
                                                             {order.user_id}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                            {new Date(
-                                                                order.date
-                                                            ).toLocaleDateString()}
+                                                            {formatDate(
+                                                                order.created_at
+                                                            )}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                            ₹
-                                                            {order.total_amount}
+                                                            {formatCurrency(
+                                                                order.total_price
+                                                            )}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                             <span
@@ -1396,6 +1474,40 @@ export default function Dashboard() {
                                                                       )
                                                                     : "Unknown"}
                                                             </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                            <div className="relative">
+                                                                <select
+                                                                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                                                                    value={
+                                                                        order.status ||
+                                                                        ""
+                                                                    }
+                                                                    onChange={(
+                                                                        e
+                                                                    ) =>
+                                                                        updateOrderStatus(
+                                                                            order.id,
+                                                                            e
+                                                                                .target
+                                                                                .value
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <option value="pending">
+                                                                        Pending
+                                                                    </option>
+                                                                    <option value="delivered">
+                                                                        Delivered
+                                                                    </option>
+                                                                    <option value="shipped">
+                                                                        Shipped
+                                                                    </option>
+                                                                    <option value="cancelled">
+                                                                        Cancelled
+                                                                    </option>
+                                                                </select>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))

@@ -22,7 +22,7 @@ export default async function RootLayout({ children }) {
     const headersList = headers();
     const url = new URL("http://localhost:3000/");
     const pathname = url.pathname;
-    const isDashboard = pathname.startsWith("/dashboard");
+    const isDashboard = pathname.startsWith("/admin/dashboard");
 
     return (
         <html lang="en" suppressHydrationWarning>

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 // Login action
 export async function login(formData, redirectUrl = "/") {
-    const supabase = await createClient();
+    const supabase = createClient();
 
     const data = {
         email: formData.get("email"),
@@ -47,16 +47,21 @@ export async function signup(formData, redirectUrl = "/") {
 
 // Check auth status - can be used in components
 export async function getSession() {
-    const supabase = await createClient();
-    const {
-        data: { session },
-    } = await supabase.auth.getSession();
-    return session;
+    try {
+        const supabase = createClient();
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+        return session; // This could be null, which is fine
+    } catch (error) {
+        console.error("Session fetch error:", error.message);
+        return null; // Return null instead of letting the error propagate
+    }
 }
 
 // Logout action
-export async function logout(redirectUrl = "/") {
-    const supabase = await createClient();
+export async function logout(redirectUrl = "/login") {
+    const supabase = createClient();
     const { error } = await supabase.auth.signOut();
 
     if (error) {

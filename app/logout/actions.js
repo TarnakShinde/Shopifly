@@ -4,8 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export async function logoutAction() {
-    // Await the cookies
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -19,7 +18,7 @@ export async function logoutAction() {
                     cookieStore.set({ name, value, ...options });
                 },
                 remove(name, options) {
-                    cookieStore.delete({ name, ...options });
+                    cookieStore.delete(name, options);
                 },
             },
         }
@@ -28,6 +27,7 @@ export async function logoutAction() {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
+        console.error("Logout error:", error);
         return {
             success: false,
             error: error.message,
@@ -36,9 +36,9 @@ export async function logoutAction() {
 
     redirect("/");
 }
+
 export async function logoutActionforDashboard() {
-    // Await the cookies
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -52,7 +52,7 @@ export async function logoutActionforDashboard() {
                     cookieStore.set({ name, value, ...options });
                 },
                 remove(name, options) {
-                    cookieStore.delete({ name, ...options });
+                    cookieStore.delete(name, options);
                 },
             },
         }
@@ -61,6 +61,7 @@ export async function logoutActionforDashboard() {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
+        console.error("Logout error:", error);
         return {
             success: false,
             error: error.message,

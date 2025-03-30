@@ -2,9 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "../../lib/supabase";
 
 export default function OrderSuccessPage() {
     const [animationComplete, setAnimationComplete] = useState(false);
+    const [status, setStatus] = useState("idle");
+    const [user, setUser] = useState(null);
+    const [first, setFirst] = useState(false);
+    const [second, setSecond] = useState(false);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         // Trigger animation complete after 2 seconds
@@ -14,6 +20,69 @@ export default function OrderSuccessPage() {
 
         return () => clearTimeout(timer);
     }, []);
+
+    useEffect(() => {
+        const getUser = async () => {
+            try {
+                const { data: userData, error } = await supabase.auth.getUser();
+                if (error) {
+                    console.error("Error fetching user:", error);
+                    return;
+                }
+                setUser(userData?.user || null);
+            } catch (err) {
+                console.error("Exception fetching user:", err);
+            }
+        };
+        getUser();
+    }, []);
+
+    // Only send email when user data is available
+    useEffect(() => {
+        const handleEmail = async () => {
+            // Don't attempt to send email if user or user.email is not available
+            if (!user || !user.email) {
+                console.log(
+                    "User email not available yet, skipping email send"
+                );
+                return;
+            }
+
+            setStatus("loading");
+            try {
+                const res = await fetch("/api/sendEmail", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        from: "shopiflyecom@gmail.com",
+                        to: user.email,
+                        subject: "Order Confirmation",
+                        html: "<h1>Order Confirmation</h1><p>Your order has been placed successfully and is being processed.</p> <p>Thank you for shopping with us!</p>",
+                    }),
+                });
+                if (res.ok) {
+                    setFirst(true);
+                    setStatus("success");
+                } else {
+                    setSecond(true);
+                    setStatus("error");
+                    const errorData = await res.json();
+                    setError(errorData.error || "Failed to send email");
+                }
+            } catch (error) {
+                setError(error.message);
+                setStatus("error");
+                setSecond(true);
+            }
+        };
+
+        if (user && user.email) {
+            handleEmail();
+        }
+    }, [user]);
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">

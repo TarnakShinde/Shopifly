@@ -1,16 +1,18 @@
 "use client";
 import { Eye, EyeOff } from "lucide-react";
-import { login } from "./action.js";
+import { login } from "./action";
 import { ToastContainer, toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [userRole, setUserRole] = useState(null);
+    const [redirectUrl, setRedirectUrl] = useState(""); // Added state for redirect URL
     const router = useRouter();
 
     const handleLogin = async (formData) => {
@@ -34,6 +36,7 @@ export default function LoginPage() {
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
     };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -42,31 +45,27 @@ export default function LoginPage() {
 
         if (result.success) {
             setUserRole(result.userRole); // Set the user role on successful login
+            setRedirectUrl(result.redirectUrl || ""); // Store the redirect URL
         } else {
             setError(result.error); // Handle error if login fails
         }
     };
 
+    // First useEffect can be removed as it's redundant with the second one
+
     useEffect(() => {
         if (userRole === "admin") {
             router.push("/admin/dashboard"); // Redirect to dashboard if admin
-        } else if (userRole === "user") {
-            router.push("/"); // Redirect to home if not an admin
-        }
-    }, [userRole, router]);
-    useEffect(() => {
-        if (userRole === "admin") {
-            router.push("/dashboard"); // Redirect to dashboard if admin
             setTimeout(() => {
-                window.location.href = result.redirectUrl || "/dashboard";
+                window.location.href = redirectUrl || "/admin/dashboard";
             }, 100);
         } else if (userRole === "user") {
             router.push("/"); // Redirect to home if not an admin
             setTimeout(() => {
-                window.location.href = result.redirectUrl || "/";
+                window.location.href = redirectUrl || "/";
             }, 100);
         }
-    }, [userRole, router]);
+    }, [userRole, router, redirectUrl]); // Added redirectUrl to dependency array
 
     return (
         <div>
@@ -131,12 +130,6 @@ export default function LoginPage() {
                                     autoComplete="current-password"
                                     className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                                 />
-                                <p className="text-center text-gray-600 mt-4">
-                                    Don't have an account?{" "}
-                                    <span className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer">
-                                        <Link href="/signup">Sign Up</Link>
-                                    </span>
-                                </p>
                                 <button
                                     type="button"
                                     onClick={togglePasswordVisibility}
@@ -145,6 +138,12 @@ export default function LoginPage() {
                                     {showPassword ? <EyeOff /> : <Eye />}
                                 </button>
                             </div>
+                            <p className="text-center text-gray-600 mt-4">
+                                Don't have an account?{" "}
+                                <span className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer">
+                                    <Link href="/signup">Sign Up</Link>
+                                </span>
+                            </p>
                         </div>
                         {error && (
                             <div className="text-red-500 text-sm">{error}</div>

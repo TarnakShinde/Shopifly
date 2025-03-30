@@ -5,9 +5,18 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Link from "next/link";
 import { useState } from "react";
+import { ShoppingCartIcon } from "lucide-react";
+import { supabase } from "../../lib/supabase";
+import { useCart } from "../context/CartContext";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 const HeroSlider = ({ products }) => {
     const [imageError, setImageError] = useState({});
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const [user, setUser] = useState(null);
+    const { addToCart } = useCart();
 
     const settings = {
         dots: false,
@@ -36,8 +45,61 @@ const HeroSlider = ({ products }) => {
             [id]: true,
         }));
     };
+    const handleAddToCart = async (product) => {
+        if (isAddingToCart) return; // Prevent multiple clicks
 
-    // Function to get image source with multiple fallbacks
+        try {
+            setIsAddingToCart(true);
+
+            // Check if user is logged in first
+            const { data: sessionData } = await supabase.auth.getSession();
+
+            // If no session exists, redirect to login
+            if (!sessionData?.session) {
+                // Store current location for redirect after login
+                if (typeof window !== "undefined") {
+                    sessionStorage.setItem(
+                        "redirectAfterAuth",
+                        window.location.pathname
+                    );
+                }
+                toast.info("Please login to add items to your cart");
+                router.push("/login");
+                return;
+            }
+
+            // Validate product data
+            if (!product || !product.uniq_id) {
+                console.error("Invalid product data:", product);
+                toast.error("Unable to add item to cart");
+                return;
+            }
+
+            // Format the item for the cart context
+            const cartItem = {
+                product_uniq_id: product.uniq_id,
+                quantity: 1,
+                discounted_price: parseFloat(product.discounted_price) || 0,
+                product_name: product.product_name || "Unknown Product",
+                image1: product.image1 || "/placeholder-image.png",
+            };
+
+            // Call the addToCart method from the context
+            const result = await addToCart(cartItem);
+
+            if (result && result.success) {
+                toast.success("Added to cart");
+            } else {
+                console.error("Error adding to cart:", result?.error);
+                toast.error("Failed to add item to cart. Please try again.");
+            }
+        } catch (err) {
+            console.error("Exception adding to cart:", err);
+            toast.error("An error occurred. Please try again.");
+        } finally {
+            setIsAddingToCart(false);
+        }
+    };
     const getImageSrc = (product) => {
         // If the primary image has already errored
         if (imageError[product.image1]) {
@@ -63,10 +125,12 @@ const HeroSlider = ({ products }) => {
                         <div className="lg:hidden relative min-h-[450px] overflow-hidden rounded-lg border border-gray-200 flex flex-col">
                             {/* Product image section */}
                             <div className="relative h-64 bg-gray-100 flex items-center justify-center">
-                                <img
-                                    src={getImageSrc(product.image1)}
+                                <Image
+                                    src={product.image1}
                                     alt={product.product_name}
-                                    className="max-h-full max-w-full object-contain p-4"
+                                    width={300}
+                                    height={300}
+                                    className="object-contain p-4 mix-blend-multiply"
                                 />
                             </div>
                             {/* Product details section */}
@@ -106,14 +170,27 @@ const HeroSlider = ({ products }) => {
                                                 25
                                             )}
                                         </p>
-                                        <div className="pt-4">
+                                        <div className="pt-4 flex gap-4">
                                             <Link
                                                 href={`/product/${product.uniq_id}`}
                                             >
-                                                <button className="bg-orange-500 text-white px-12 py-3 text-lg font-medium hover:bg-orange-300 transition-colors duration-300 rounded-md">
+                                                <button className="bg-green-500 text-white px-8 py-3 text-lg font-medium hover:bg-green-300 transition-colors duration-300 rounded-md">
                                                     Shop Now
                                                 </button>
                                             </Link>
+                                            <button
+                                                onClick={() =>
+                                                    handleAddToCart(product)
+                                                }
+                                                disabled={isAddingToCart}
+                                                // className="bg-green-600 text-white px-8 py-3 text-lg font-medium hover:bg-green-500 transition-colors duration-300 rounded-md flex items-center gap-2"
+                                                className="bg-orange-500 text-white px-8 py-3 text-lg font-medium hover:bg-orange-300 transition-colors duration-300 rounded-md flex gap-2"
+                                            >
+                                                <ShoppingCartIcon />
+                                                {isAddingToCart
+                                                    ? "Adding..."
+                                                    : "Add to Cart"}
+                                            </button>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-center h-[450px] relative">

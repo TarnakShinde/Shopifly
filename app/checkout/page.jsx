@@ -62,7 +62,6 @@ export default function CheckoutPage() {
             fetchCartItems();
         }
     }, [user]);
-
     async function handleCheckout() {
         if (
             !shippingDetails.fullName ||
@@ -103,38 +102,61 @@ export default function CheckoutPage() {
 
             // Now update the stock for each product
             const stockUpdatePromises = cartItems.map(async (item) => {
-                // Get current stock
-                const { data: productData, error: productError } =
-                    await supabase
-                        .from("products")
-                        .select("productstockquantity")
-                        .eq("uniq_id", item.uniq_id)
-                        .single();
-
-                if (productError) {
-                    throw new Error(
-                        `Failed to fetch product ${item.uniq_id}: ${productError.message}`
-                    );
+                // Check if item has a valid uniq_id
+                if (!item.uniq_id) {
+                    console.warn("Skipping item with missing uniq_id:", item);
+                    return;
                 }
 
-                const currentStock = productData.productstockquantity;
-                const newStock = Math.max(0, currentStock - item.quantity);
+                try {
+                    // Get current stock
+                    const { data: productData, error: productError } =
+                        await supabase
+                            .from("products")
+                            .select("productstockquantity")
+                            .eq("uniq_id", item.uniq_id)
+                            .single();
 
-                // Update the stock
-                const { error: updateError } = await supabase
-                    .from("products")
-                    .update({ productstockquantity: newStock })
-                    .eq("uniq_id", item.uniq_id);
+                    if (productError) {
+                        throw new Error(
+                            `Failed to fetch product ${item.uniq_id}: ${productError.message}`
+                        );
+                    }
 
-                if (updateError) {
-                    throw new Error(
-                        `Failed to update stock for ${item.uniq_id}: ${updateError.message}`
+                    if (!productData) {
+                        throw new Error(`Product not found: ${item.uniq_id}`);
+                    }
+
+                    const currentStock = productData.productstockquantity;
+                    const newStock = Math.max(0, currentStock - item.quantity);
+
+                    // Update the stock
+                    const { error: updateError } = await supabase
+                        .from("products")
+                        .update({ productstockquantity: newStock })
+                        .eq("uniq_id", item.uniq_id);
+
+                    if (updateError) {
+                        throw new Error(
+                            `Failed to update stock for ${item.uniq_id}: ${updateError.message}`
+                        );
+                    }
+                } catch (itemError) {
+                    console.error(
+                        `Error processing item ${item.uniq_id || "unknown"}:`,
+                        itemError
                     );
+                    throw itemError;
                 }
             });
 
+            // Filter out any undefined promises (from skipped items)
+            const validPromises = stockUpdatePromises.filter(
+                (promise) => promise !== undefined
+            );
+
             // Wait for all stock updates to complete
-            await Promise.all(stockUpdatePromises);
+            await Promise.all(validPromises);
 
             // Clear the cart
             const { error: cartDeleteError } = await supabase
@@ -159,7 +181,7 @@ export default function CheckoutPage() {
     }
 
     return (
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="p-6 max-w-4xl mx-auto min-h-screen">
             <h1 className="text-2xl font-bold mb-4">Checkout</h1>
             {error && <p className="text-red-500 mb-4">{error}</p>}
 

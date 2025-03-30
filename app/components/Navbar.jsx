@@ -11,6 +11,7 @@ import {
     CircleUserRound,
     House,
     LogOut,
+    GalleryVerticalEnd,
 } from "lucide-react";
 import SearchBar from "./SearchBar";
 import Menu from "@mui/material/Menu";
@@ -18,7 +19,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { createClient } from "../../utils/supabase/client";
-import { logoutAction } from "../logout/actions";
+import { logout } from "../../actions/auth";
 
 const Navbar = () => {
     const notify = (message) =>
@@ -45,7 +46,9 @@ const Navbar = () => {
 
     const pathname = usePathname();
     const isOnDashboard = pathname === "/dashboard";
+    // Correct the `open` state derivation
     const open = Boolean(anchorEl);
+
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
     };
@@ -123,6 +126,13 @@ const Navbar = () => {
         return () => subscription.unsubscribe();
     }, [supabase]);
 
+    // Handle logout for both desktop and mobile menus
+    const handleLogout = async () => {
+        handleClose();
+        setIsClick(false);
+        await logout();
+    };
+
     // Menu Items based on user state
     const menuItems = user
         ? [
@@ -136,13 +146,7 @@ const Navbar = () => {
                       My Order
                   </Link>
               </MenuItem>,
-              <MenuItem
-                  key="logout"
-                  onClick={() => {
-                      handleClose();
-                      logoutAction();
-                  }}
-              >
+              <MenuItem key="logout" onClick={handleLogout}>
                   Logout
               </MenuItem>,
           ]
@@ -337,12 +341,19 @@ const Navbar = () => {
                                         Profile
                                     </span>
                                 </Link>
+                                <Link
+                                    href="/myOrder"
+                                    className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center items-center"
+                                    onClick={() => setIsClick(false)}
+                                >
+                                    <GalleryVerticalEnd size={25} />
+                                    <span className="text-xl font-semibold">
+                                        My Orders
+                                    </span>
+                                </Link>
                                 <button
-                                    onClick={() => {
-                                        logoutAction();
-                                        setIsClick(false);
-                                    }}
-                                    className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full "
+                                    onClick={handleLogout}
+                                    className="text-white flex gap-2 hover:bg-white hover:text-black rounded-lg p-2 w-full text-center items-center"
                                 >
                                     <LogOut size={25} />
                                     <span className="text-xl font-semibold">
@@ -369,7 +380,7 @@ const Navbar = () => {
                                 >
                                     <CircleUserRound size={25} />
                                     <span className="text-xl font-semibold">
-                                        Sign Up
+                                        Signup
                                     </span>
                                 </Link>
                             </>
@@ -377,6 +388,7 @@ const Navbar = () => {
                     </div>
                 </div>
             </nav>
+            <ToastContainer />
         </>
     );
 };

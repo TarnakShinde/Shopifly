@@ -50,50 +50,120 @@ const ProductCard = ({ data, isLoggedIn }) => {
     }, [data?.product_name]);
 
     // Get user object
-    useEffect(() => {
-        const getUser = async () => {
-            try {
-                const { data: userData, error } = await supabase.auth.getUser();
-                if (error) {
-                    console.error("Error fetching user:", error);
-                    return;
-                }
-                setUser(userData?.user || null);
-            } catch (err) {
-                console.error("Exception fetching user:", err);
-            }
-        };
-        getUser();
-    }, [supabase.auth]);
+    // useEffect(() => {
+    //     const getUser = async () => {
+    //         try {
+    //             const { data: userData, error } = await supabase.auth.getUser();
+    //             if (error) {
+    //                 console.error("Error fetching user:", error);
+    //                 return;
+    //             }
+    //             setUser(userData?.user || null);
+    //         } catch (err) {
+    //             console.error("Exception fetching user:", err);
+    //         }
+    //     };
+    //     getUser();
+    // }, [supabase.auth]);
 
+    // const handleAddToCart = async (productData) => {
+    //     if (isAddingToCart) return; // Prevent multiple clicks
+
+    //     try {
+    //         setIsAddingToCart(true);
+
+    //         // Check if user is logged in
+    //         let currentUser = user;
+    //         if (!currentUser) {
+    //             // Try to get latest user data
+    //             const { data: userData, error } = await supabase.auth.getUser();
+
+    //             if (error || !userData?.user) {
+    //                 // Store redirect info
+    //                 if (typeof window !== "undefined") {
+    //                     sessionStorage.setItem(
+    //                         "redirectAfterAuth",
+    //                         window.location.pathname
+    //                     );
+    //                 }
+    //                 toast.error("Please login to add to cart");
+    //                 router.push("/login");
+    //                 return;
+    //             }
+
+    //             currentUser = userData.user;
+    //             setUser(currentUser);
+    //         }
+
+    //         // Validate product data
+    //         if (!productData || !productData.uniq_id) {
+    //             console.error("Invalid product data:", productData);
+    //             toast.error("Unable to add item to cart");
+    //             return;
+    //         }
+
+    //         const productToAdd = {
+    //             user_id: currentUser.id,
+    //             product_uniq_id: productData.uniq_id,
+    //             quantity: 1,
+    //             discounted_price: parseFloat(productData.discounted_price) || 0,
+    //             retail_price: parseFloat(productData.retail_price) || 0,
+    //             image1: productData.image1 || "/placeholder-image.png",
+    //             product_name: productData.product_name,
+    //             uniq_id: productData.uniq_id, // Ensure this ID is included
+    //         };
+
+    //         // Call the context method which should handle the Supabase insertion
+    //         const result = await addToCart(productToAdd);
+    //         if (result && result.error) {
+    //             console.error("Error adding to cart:", result.error);
+    //             toast.error("Failed to add item to cart. Please try again.");
+    //         } else {
+    //             toast.success("Added to cart");
+    //         }
+    //     } catch (err) {
+    //         console.error("Exception adding to cart:", err);
+    //         toast.error("An error occurred. Please try again.");
+    //     } finally {
+    //         setIsAddingToCart(false);
+    //     }
+    // };
     const handleAddToCart = async (productData) => {
         if (isAddingToCart) return; // Prevent multiple clicks
 
         try {
             setIsAddingToCart(true);
 
-            // Check if user is logged in
-            let currentUser = user;
-            if (!currentUser) {
-                // Try to get latest user data
-                const { data: userData, error } = await supabase.auth.getUser();
+            // Check if user is logged in first
+            const { data: sessionData } = await supabase.auth.getSession();
 
-                if (error || !userData?.user) {
-                    // Store redirect info
-                    if (typeof window !== "undefined") {
-                        sessionStorage.setItem(
-                            "redirectAfterAuth",
-                            window.location.pathname
-                        );
-                    }
-                    toast.error("Please login to add to cart");
-                    router.push("/login");
-                    return;
+            // If no session exists, redirect to login
+            if (!sessionData?.session) {
+                // Store current location for redirect after login
+                if (typeof window !== "undefined") {
+                    sessionStorage.setItem(
+                        "redirectAfterAuth",
+                        window.location.pathname
+                    );
                 }
-
-                currentUser = userData.user;
-                setUser(currentUser);
+                toast.info("Please login to add items to your cart");
+                router.push("/login");
+                return;
             }
+
+            // At this point we know the user is logged in
+            // Get the current user data
+            const { data: userData, error: userError } =
+                await supabase.auth.getUser();
+            if (userError || !userData?.user) {
+                toast.error(
+                    "Authentication error. Please try logging in again."
+                );
+                router.push("/login");
+                return;
+            }
+
+            const currentUser = userData.user;
 
             // Validate product data
             if (!productData || !productData.uniq_id) {
@@ -128,7 +198,6 @@ const ProductCard = ({ data, isLoggedIn }) => {
             setIsAddingToCart(false);
         }
     };
-
     // If data is not available, show a loading state
     if (!data || randomReviewCount === null) {
         return (

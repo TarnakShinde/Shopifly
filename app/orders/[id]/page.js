@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import OrderDetails from "../../components/OrderDetails";
+import OrderDetails from "@/components/OrderDetails";
 import { supabase } from "../../../lib/supabase";
 
 async function getOrder(orderId) {
