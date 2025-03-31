@@ -17,7 +17,7 @@ const Home = () => {
         products();
     }, []);
     return (
-        <div>
+        <div className="scroll-smooth">
             <HeroSlider products={heroData} />
             <CategorySlider />
             <ProductSlider id={0} />

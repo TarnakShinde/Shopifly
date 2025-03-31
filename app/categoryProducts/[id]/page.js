@@ -1,8 +1,6 @@
 "use client";
-import { getFromAndTo } from "@/app/api/catProducts/route";
 import { useParams, useSearchParams } from "next/navigation";
 import React, { useState, useEffect } from "react";
-import PaginationControls from "@/app/components/PaginationControls";
 
 const CategoryProducts = ({ searchParams }) => {
     const { id } = useParams();

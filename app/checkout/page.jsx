@@ -28,6 +28,9 @@ export default function CheckoutPage() {
         );
     }, 0);
 
+    const estimatedDeliveryDate = new Date();
+    estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 5);
+
     useEffect(() => {
         async function fetchUser() {
             const {
@@ -89,6 +92,7 @@ export default function CheckoutPage() {
                         total_price: totalPrice,
                         shipping_details: shippingDetails,
                         paymentMode: paymentMethod,
+                        delivery_date: estimatedDeliveryDate, // Adding delivery date
                         status: "pending",
                     },
                 ])

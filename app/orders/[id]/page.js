@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import OrderDetails from "@/components/OrderDetails";
-import { supabase } from "../../../lib/supabase";
+import OrderDetails from "../../components/OrderDetails";
+import { supabase } from "../../../lib/supabase"; // Fixed import path
 
 async function getOrder(orderId) {
     const { data, error } = await supabase
@@ -9,20 +9,22 @@ async function getOrder(orderId) {
         .eq("id", orderId)
         .single();
 
-    if (error || !data) {
-        return null;
+    if (error) {
+        console.error("Error fetching order:", error);
     }
 
-    return data;
+    return data || null;
 }
 
 export default async function OrderDetailsPage({ params }) {
-    // Now use the id from the resolved params
+    // Get the full order data
     const order = await getOrder(params.id);
+    console.log("Order details:", order);
 
     if (!order) {
         notFound();
     }
 
-    return <OrderDetails order={order.id} />;
+    // Pass the entire order object to the component
+    return <OrderDetails orderId={order.id} />;
 }

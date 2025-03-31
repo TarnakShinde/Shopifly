@@ -143,18 +143,20 @@ const ProductListing = ({ searchParams }) => {
                 {/* Filters and Sort Section */}
                 <div className="mb-6 flex flex-wrap gap-4">
                     {/* Subcategory Filter */}
-                    <select
-                        value={subcategoryFilter}
-                        onChange={handleSubcategoryFilterChange}
-                        className="p-2 border rounded-lg"
-                    >
-                        <option value="all">All Subcategories</option>
-                        {subcategories.map((subcategory) => (
-                            <option key={subcategory} value={subcategory}>
-                                {subcategory}
-                            </option>
-                        ))}
-                    </select>
+                    {id == 1 || id == 2 || id == 3 ? (
+                        <select
+                            value={subcategoryFilter}
+                            onChange={handleSubcategoryFilterChange}
+                            className="p-2 border rounded-lg"
+                        >
+                            <option value="all">All Subcategories</option>
+                            {subcategories.map((subcategory) => (
+                                <option key={subcategory} value={subcategory}>
+                                    {subcategory}
+                                </option>
+                            ))}
+                        </select>
+                    ) : null}
 
                     <select
                         value={priceFilter}

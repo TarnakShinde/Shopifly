@@ -81,13 +81,13 @@ export default function OrderDetails({ orderId }) {
 
     if (error) {
         return (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center min-h-screen">
                 <h2 className="text-xl font-semibold text-red-600 mb-2">
                     Error Loading Order
                 </h2>
                 <p className="text-red-500">{error}</p>
                 <Link
-                    href="/orders"
+                    href="/myOrder"
                     className="mt-4 inline-block text-blue-600 hover:underline"
                 >
                     Return to Orders
@@ -118,7 +118,6 @@ export default function OrderDetails({ orderId }) {
 
     // Parse the JSON data
     const orderItems = Array.isArray(order.products) ? order.products : [];
-    console.log("Chere: ", orderItems);
     const shippingDetails = order.shipping_details || {};
 
     return (
@@ -149,6 +148,12 @@ export default function OrderDetails({ orderId }) {
                 <p className="text-sm text-gray-500 mt-1">
                     Placed on {new Date(order.created_at).toLocaleDateString()}{" "}
                     at {new Date(order.created_at).toLocaleTimeString()}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                    Estimated Delivery:{" "}
+                    {order.delivery_date
+                        ? new Date(order.delivery_date).toLocaleDateString()
+                        : "Not Available"}
                 </p>
             </div>
 

@@ -32,7 +32,7 @@ export async function GET(request) {
         const { data, error } = await supabase
             .from("orders")
             .select(
-                `id, status, total_price, shipping_details, products, created_at`
+                `id, status, total_price, shipping_details, products, created_at, delivery_date`
             )
             .eq("user_id", userId);
 
@@ -56,6 +56,7 @@ export async function GET(request) {
                 total_price: order.total_price || 0,
                 shippingDetails: order.shipping_details || {},
                 products: order.products || [],
+                delivery_date: order.delivery_date || null,
             };
         });
         return NextResponse.json({
@@ -98,8 +99,6 @@ export async function PATCH(request) {
             .eq("id", String(orderId))
             .eq("user_id", String(userId));
 
-        console.log("Order check data:", orderCheck);
-
         if (checkError || !orderCheck || orderCheck.length === 0) {
             return NextResponse.json(
                 {
@@ -128,8 +127,6 @@ export async function PATCH(request) {
             .eq("id", String(orderId))
             .eq("user_id", String(userId))
             .select();
-
-        console.log("Updated order data:", data);
 
         if (error || !data || data.length === 0) {
             throw new Error("Failed to update order status");

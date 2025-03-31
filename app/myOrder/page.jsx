@@ -60,9 +60,6 @@ export default function MyOrdersPage() {
                 `/api/orders?id=${userId}&page=${page}&limit=${limit}`
             );
             const result = await response.json();
-
-            console.log("API response:", result); // Debug log
-
             if (!response.ok) {
                 throw new Error(result.message || "Failed to fetch orders");
             }
@@ -82,7 +79,6 @@ export default function MyOrdersPage() {
     };
 
     const formatDate = (dateString) => {
-        console.log("Date string:", dateString); // Debug log
         if (!dateString) return "N/A";
 
         try {
@@ -96,7 +92,6 @@ export default function MyOrdersPage() {
             return `${day}/${month}/${year}`;
         } catch (e) {
             console.error("Date formatting error:", e);
-            console.log("Original date string:", dateString);
             return dateString; // Return original string if formatting fails
         }
     };
@@ -153,14 +148,13 @@ export default function MyOrdersPage() {
                 });
 
                 const result = await response.json();
-                console.log("Cancel order response:", result); // Debug log
 
                 if (!response.ok) {
                     throw new Error(result.message || "Failed to cancel order");
                 }
 
-                // Refresh the orders list
-                console.log("Update hua");
+                // Refresh the orders list after cancellation
+                alert("Order cancelled successfully.");
                 fetchOrders(user.id);
             } catch (err) {
                 console.error("Error cancelling order:", err);
@@ -243,6 +237,22 @@ export default function MyOrdersPage() {
                                             </h2>
                                             <p className="text-sm text-gray-500">
                                                 Placed on {order.date}
+                                            </p>
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                Estimated Delivery:{" "}
+                                                {order.delivery_date
+                                                    ? new Date(
+                                                          order.delivery_date
+                                                      ).toLocaleDateString(
+                                                          "en-US",
+                                                          {
+                                                              weekday: "long", // Example: "Saturday"
+                                                              year: "numeric", // Example: "2025"
+                                                              month: "long", // Example: "April"
+                                                              day: "numeric", // Example: "5"
+                                                          }
+                                                      )
+                                                    : "Not Available"}
                                             </p>
                                         </div>
                                         <div>
@@ -372,6 +382,7 @@ export default function MyOrdersPage() {
                                                 )}
                                             </div>
                                         )}
+
                                         <div className="mt-4 flex justify-end space-x-3">
                                             {order.id && (
                                                 <Link
