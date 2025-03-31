@@ -5,7 +5,7 @@ import CategorySlider from "./components/CategorySlider";
 import ChatBot from "./components/ChatBot";
 import ChatWidget from "./components/ChatWidget";
 import ProductSlider from "./components/ProductSlider";
-import { getUsersForHero } from "./api/products/route";
+import { getUsersForHero } from "../lib/product";
 
 const Home = () => {
     const [heroData, setHeroData] = useState([]);

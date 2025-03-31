@@ -1,32 +1,20 @@
 import { supabase } from "../../../lib/supabase";
+import { NextResponse } from "next/server";
 
-export async function getUsersForHero() {
+export async function GET() {
     try {
-        // Get total count of products
-        const { count } = await supabase
-            .from("products")
-            .select("*", { count: "exact", head: true });
-
-        if (!count) return [];
-
-        // Get random offset
-        const randomOffset = Math.floor(Math.random() * (count - 5));
-
-        // Fetch 5 random products
         const { data: products, error } = await supabase
             .from("products")
-            .select("*")
-            .range(randomOffset, randomOffset + 4);
+            .select("*");
 
         if (error) throw error;
 
-        // Shuffle the results
-        const shuffledProducts = products.sort(() => Math.random() - 0.5);
-
-        // Dates are already serialized in Supabase response
-        return shuffledProducts;
+        return NextResponse.json(products);
     } catch (error) {
-        console.error("Error fetching hero products:", error);
-        return [];
+        console.error("Error fetching products:", error);
+        return NextResponse.json(
+            { error: "Failed to fetch products" },
+            { status: 500 }
+        );
     }
 }
