@@ -68,7 +68,7 @@ export default function LoginPage() {
     }, [userRole, router, redirectUrl]); // Added redirectUrl to dependency array
 
     return (
-        <div>
+        <div className="min-h-screen">
             <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 max-h-screen">
                 <div className="sm:mx-auto sm:w-full sm:max-w-sm">
                     <div className="mx-auto h-10 w-auto text-4xl text-center font-bold">

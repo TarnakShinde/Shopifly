@@ -8,22 +8,13 @@ const Footer = () => {
                 <a href="/" className="hover:text-white">
                     Home
                 </a>
-                <a
-                    href="http://localhost:3000/productListing/1"
-                    className="hover:text-white"
-                >
+                <a href="/productListing/1" className="hover:text-white">
                     Men
                 </a>
-                <a
-                    href="http://localhost:3000/productListing/1"
-                    className="hover:text-white"
-                >
+                <a href="/productListing/2" className="hover:text-white">
                     Women
                 </a>
-                <a
-                    href="http://localhost:3000/productListing/1"
-                    className="hover:text-white"
-                >
+                <a href="/productListing/3" className="hover:text-white">
                     Kids
                 </a>
 
