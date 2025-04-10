@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { CartProvider } from "./context/CartContext";
+import ChatBot from "./components/ChatBot";
 import { AuthProvider } from "./context/AuthContext";
 import { headers } from "next/headers";
 
@@ -31,6 +32,7 @@ export default async function RootLayout({ children }) {
                     <CartProvider>
                         {!isDashboard && <Navbar />}
                         {children}
+                        {!isDashboard && <ChatBot />}
                         {!isDashboard && <Footer />}
                     </CartProvider>
                 </AuthProvider>

@@ -34,7 +34,7 @@ export async function POST(request) {
         });
 
         // 🔥 Hardcoded base URL
-        const redirectTo = `https://www.shopifly.tech/reset-password`;
+        const redirectTo = `https://www.shopifly.tech/update-password`;
 
         console.log("Sending password reset email to:", email);
         console.log("With redirect URL:", redirectTo);

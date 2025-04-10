@@ -26,13 +26,16 @@ const ChatBot = () => {
         setMessages((prevMessages) => [...prevMessages, userMessage]);
 
         try {
-            const response = await fetch("http://localhost:5000/chatbot", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ message: text }),
-            });
+            const response = await fetch(
+                "https://shopifly-chatbot.onrender.com",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ message: text }),
+                }
+            );
 
             const data = await response.json();
             const botMessage = {

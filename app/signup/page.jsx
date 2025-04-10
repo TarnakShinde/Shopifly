@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import bcrypt from "bcryptjs";
 const strengthLabels = ["weak", "medium", "medium", "strong"];
 import { supabase } from "../../lib/supabase";
+import Link from "next/link";
 import "react-toastify/dist/ReactToastify.css"; // Import the CSS for toast notifications
 
 const SignUp = () => {
@@ -207,6 +208,7 @@ const SignUp = () => {
                                         }}
                                         className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                                     />
+
                                     <button
                                         type="button"
                                         onClick={togglePasswordVisibility}
@@ -287,10 +289,26 @@ const SignUp = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-300"
+                                className={`flex w-full items-center justify-center gap-2 rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+                                    loading
+                                        ? "opacity-70 cursor-not-allowed"
+                                        : ""
+                                }`}
                             >
+                                {loading && (
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                                )}
                                 {loading ? "Creating Account..." : "Sign Up"}
                             </button>
+                            <p className="text-center text-gray-600 mt-4">
+                                Already have an account?{" "}
+                                <Link
+                                    href="/login"
+                                    className="text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                    Login
+                                </Link>
+                            </p>
                         </div>
                     </form>
                 </div>
