@@ -44,7 +44,7 @@ export async function POST(request) {
         });
 
         // Ensure the redirect URL is correctly formatted
-        const baseUrl = `http://www.shopifly.tech`;
+        const redirectTo = `http://www.shopifly.tech/reset-password`;
         console.log("Sending password reset email to:", email);
         console.log("With redirect URL:", redirectTo);
 
@@ -52,7 +52,7 @@ export async function POST(request) {
         const { data, error } = await supabase.auth.resetPasswordForEmail(
             email,
             {
-                redirectTo: `${baseUrl}/reset-password`,
+                redirectTo,
             }
         );
 
