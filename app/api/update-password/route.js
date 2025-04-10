@@ -44,12 +44,12 @@ export async function POST(request) {
         });
 
         // Ensure the redirect URL is correctly formatted
-        const redirectTo = `https://www.shopifly.tech/reset-password`;
+        const redirectTo = `https://www.shopifly.tech/update-password`;
         console.log("Sending password reset email to:", email);
         console.log("With redirect URL:", redirectTo);
 
         // Use the correct parameters format for resetPasswordForEmail
-        const { data, error } = await supabase.auth.admin.resetPasswordForEmail(
+        const { data, error } = await supabase.auth.resetPasswordForEmail(
             email,
             {
                 redirectTo,
