@@ -3,8 +3,18 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
     try {
-        const body = await request.json();
-        const { email } = body;
+        // Handle JSON parsing errors
+        let body;
+        try {
+            body = await request.json();
+        } catch (parseError) {
+            return NextResponse.json(
+                { error: "Invalid JSON in request body" },
+                { status: 400, headers: { "Content-Type": "application/json" } }
+            );
+        }
+
+        const email = body?.email;
 
         if (!email) {
             return NextResponse.json(
@@ -33,15 +43,17 @@ export async function POST(request) {
             },
         });
 
-        // 🔥 Hardcoded base URL
+        // Ensure the redirect URL is correctly formatted
         const redirectTo = `https://www.shopifly.tech/reset-password`;
-
         console.log("Sending password reset email to:", email);
         console.log("With redirect URL:", redirectTo);
 
-        const { data, error } = await supabase.auth.resetPasswordForEmail(
+        // Use the correct parameters format for resetPasswordForEmail
+        const { data, error } = await supabase.auth.admin.resetPasswordForEmail(
             email,
-            { redirectTo }
+            {
+                redirectTo,
+            }
         );
 
         if (error) {
