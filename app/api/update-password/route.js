@@ -44,7 +44,7 @@ export async function POST(request) {
         });
 
         // Ensure the redirect URL is correctly formatted
-        const redirectTo = `https://www.shopifly.tech/update-password`;
+        const redirectTo = `www.shopifly.tech/reset-password`;
         console.log("Sending password reset email to:", email);
         console.log("With redirect URL:", redirectTo);
 
