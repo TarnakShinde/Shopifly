@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 const ProfilePage = () => {
     const router = useRouter();
@@ -138,10 +139,10 @@ const ProfilePage = () => {
                 throw new Error(result.error || "Failed to send reset email");
             }
 
-            alert("Password reset email sent!");
+            toast.success("Password reset email sent successfully!");
+            setSuccess("Password reset email sent successfully!");
         } catch (error) {
-            alert("Failed to send reset email");
-            console.error(error.message);
+            toast.error(error.message || "Failed to send reset email");
         }
     };
 
