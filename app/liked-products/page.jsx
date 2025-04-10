@@ -121,7 +121,7 @@ export default function LikedProductsPage() {
                             {/* View More Button */}
                             <Link
                                 href={`/product/${product.uniq_id}`}
-                                className="mt-auto inline-block px-4 py-2 bg-blue-600 text-white text-center rounded hover:bg-blue-700"
+                                className="mt-auto inline-block px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white text-center rounded"
                             >
                                 View More
                             </Link>

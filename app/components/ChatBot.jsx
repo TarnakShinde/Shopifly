@@ -27,7 +27,7 @@ const ChatBot = () => {
 
         try {
             const response = await fetch(
-                "https://shopifly-chatbot.onrender.com",
+                "https://shopifly-chatbot.onrender.com/chatbot",
                 {
                     method: "POST",
                     headers: {

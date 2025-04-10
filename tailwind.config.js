@@ -13,6 +13,7 @@ module.exports = {
             colors: {
                 primary: "var(--first-color)",
                 secondary: "var(--second-color)",
+                fith: "var(--fifth-color)",
             },
         },
     },

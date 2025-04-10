@@ -127,8 +127,11 @@ const ProductListing = ({ searchParams }) => {
     // Show loading state if no category ID is available
     if (!id) {
         return (
-            <div className="flex justify-center items-center h-64">
-                <p>No category selected</p>
+            <div className="flex justify-center items-center h-screen">
+                <div className="text-center">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+                    <p className="mt-2">No category selected</p>
+                </div>
             </div>
         );
     }
