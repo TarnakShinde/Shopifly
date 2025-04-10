@@ -5,14 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../utils/supabase/client";
 import { useCart } from "../context/CartContext";
-import { toast } from "react-toastify";
 import { handleAddToFavorites } from "../../utils/favorites";
+import { toast } from "react-toastify";
 
 const ProductCard = ({ data, isLoggedIn }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [user, setUser] = useState(null);
     const [isHoveredHeart, setIsHoveredHeart] = useState(false);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const [isFavorited, setIsFavorited] = useState(false);
     const images = [
         data?.image1,
         data?.image2,
@@ -49,85 +50,46 @@ const ProductCard = ({ data, isLoggedIn }) => {
         }
     }, [data?.product_name]);
 
-    // Get user object
-    // useEffect(() => {
-    //     const getUser = async () => {
-    //         try {
-    //             const { data: userData, error } = await supabase.auth.getUser();
-    //             if (error) {
-    //                 console.error("Error fetching user:", error);
-    //                 return;
-    //             }
-    //             setUser(userData?.user || null);
-    //         } catch (err) {
-    //             console.error("Exception fetching user:", err);
-    //         }
-    //     };
-    //     getUser();
-    // }, [supabase.auth]);
+    useEffect(() => {
+        const getUser = async () => {
+            try {
+                const { data: userData, error } = await supabase.auth.getUser();
+                if (error) {
+                    console.error("Error fetching user:", error);
+                    return;
+                }
+                setUser(userData?.user || null);
+            } catch (err) {
+                console.error("Exception fetching user:", err);
+            }
+        };
+        getUser();
+    }, [supabase.auth]);
 
-    // const handleAddToCart = async (productData) => {
-    //     if (isAddingToCart) return; // Prevent multiple clicks
+    useEffect(() => {
+        const checkFavorite = async () => {
+            if (!user || !data?.uniq_id) return;
 
-    //     try {
-    //         setIsAddingToCart(true);
+            const { data: favData, error } = await supabase
+                .from("favorites")
+                .select("id")
+                .eq("user_id", user.id)
+                .eq("product_id", data.uniq_id)
+                .single();
 
-    //         // Check if user is logged in
-    //         let currentUser = user;
-    //         if (!currentUser) {
-    //             // Try to get latest user data
-    //             const { data: userData, error } = await supabase.auth.getUser();
+            if (error && error.code !== "PGRST116") {
+                console.error(
+                    "Error checking favorites status:",
+                    error.message
+                );
+            }
 
-    //             if (error || !userData?.user) {
-    //                 // Store redirect info
-    //                 if (typeof window !== "undefined") {
-    //                     sessionStorage.setItem(
-    //                         "redirectAfterAuth",
-    //                         window.location.pathname
-    //                     );
-    //                 }
-    //                 toast.error("Please login to add to cart");
-    //                 router.push("/login");
-    //                 return;
-    //             }
+            setIsFavorited(!!favData);
+        };
 
-    //             currentUser = userData.user;
-    //             setUser(currentUser);
-    //         }
+        checkFavorite();
+    }, [user, data?.uniq_id]);
 
-    //         // Validate product data
-    //         if (!productData || !productData.uniq_id) {
-    //             console.error("Invalid product data:", productData);
-    //             toast.error("Unable to add item to cart");
-    //             return;
-    //         }
-
-    //         const productToAdd = {
-    //             user_id: currentUser.id,
-    //             product_uniq_id: productData.uniq_id,
-    //             quantity: 1,
-    //             discounted_price: parseFloat(productData.discounted_price) || 0,
-    //             retail_price: parseFloat(productData.retail_price) || 0,
-    //             image1: productData.image1 || "/placeholder-image.png",
-    //             product_name: productData.product_name,
-    //             uniq_id: productData.uniq_id, // Ensure this ID is included
-    //         };
-
-    //         // Call the context method which should handle the Supabase insertion
-    //         const result = await addToCart(productToAdd);
-    //         if (result && result.error) {
-    //             console.error("Error adding to cart:", result.error);
-    //             toast.error("Failed to add item to cart. Please try again.");
-    //         } else {
-    //             toast.success("Added to cart");
-    //         }
-    //     } catch (err) {
-    //         console.error("Exception adding to cart:", err);
-    //         toast.error("An error occurred. Please try again.");
-    //     } finally {
-    //         setIsAddingToCart(false);
-    //     }
-    // };
     const handleAddToCart = async (productData) => {
         if (isAddingToCart) return; // Prevent multiple clicks
 
@@ -259,16 +221,15 @@ const ProductCard = ({ data, isLoggedIn }) => {
                                     window.location.pathname
                                 );
                             }
-                            toast.error("Please login to add to favorites");
                             router.push("/login");
                             return;
                         }
+
                         const result = await handleAddToFavorites(
                             data.uniq_id,
                             user
                         );
-                        if (result?.requiresAuth) {
-                            // Redirect to login page
+                        if (result.requiresAuth) {
                             router.push("/login");
                         }
                     }}

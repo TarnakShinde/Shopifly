@@ -58,17 +58,3 @@ export async function getSession() {
         return null; // Return null instead of letting the error propagate
     }
 }
-
-// Logout action
-export async function logout(redirectUrl = "/login") {
-    const supabase = createClient();
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-        console.error("Logout error:", error.message);
-        return { error: error.message };
-    }
-
-    revalidatePath("/", "layout");
-    redirect(redirectUrl);
-}

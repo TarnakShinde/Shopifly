@@ -53,8 +53,11 @@ export default function LikedProductsPage() {
 
     if (isLoading) {
         return (
-            <div className="container mx-auto p-4">
-                Loading your favorites...
+            <div className="flex justify-center items-center h-screen">
+                <div className="text-center">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+                    <p className="mt-2">Loading...</p>
+                </div>
             </div>
         );
     }
@@ -64,7 +67,7 @@ export default function LikedProductsPage() {
             <h1 className="text-2xl font-bold mb-6">Your Favorite Products</h1>
 
             {likedProducts.length === 0 ? (
-                <div className="text-center py-10">
+                <div className="text-center py-10 min-h-screen">
                     <p className="mb-4">
                         You haven't added any products to your favorites yet.
                     </p>
@@ -80,9 +83,18 @@ export default function LikedProductsPage() {
                     {likedProducts.map((product) => (
                         <div
                             key={product.uniq_id}
-                            className="relative bg-white p-4 rounded-lg shadow flex items-center space-x-4"
+                            className="relative bg-white p-4 rounded-lg shadow flex flex-col space-y-4 h-full"
                         >
-                            <div className="relative w-20 h-20">
+                            {/* Remove Favorite Button */}
+                            <button
+                                onClick={() => removeFavorite(product.uniq_id)}
+                                className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 transition"
+                                aria-label="Remove from favorites"
+                            >
+                                <CircleX className="w-5 h-5 text-gray-600" />
+                            </button>
+                            {/* Product Image */}
+                            <div className="relative w-full h-40 mx-auto">
                                 <Image
                                     src={
                                         product.image2 ||
@@ -90,12 +102,13 @@ export default function LikedProductsPage() {
                                     }
                                     alt={product.product_name}
                                     className="object-contain rounded"
-                                    layout="fill"
-                                    priority={true}
+                                    fill
+                                    priority
                                 />
                             </div>
-                            <div className="flex-1">
-                                <h3 className="text-md font-semibold">
+                            {/* Product Details */}
+                            <div className="flex-1 flex flex-col justify-between">
+                                <h3 className="text-md font-semibold leading-snug mb-1">
                                     {product.product_name}
                                 </h3>
                                 <p className="font-bold text-gray-800">
@@ -104,20 +117,14 @@ export default function LikedProductsPage() {
                                         ₹{product.retail_price}
                                     </span>
                                 </p>
-                                <Link
-                                    href={`/product/${product.uniq_id}`}
-                                    className="mt-2 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                                >
-                                    View More
-                                </Link>
                             </div>
-                            <button
-                                onClick={() => removeFavorite(product.uniq_id)}
-                                className="absolute top-2 right-2 p-2 rounded-full"
-                                aria-label="Remove from favorites"
+                            {/* View More Button */}
+                            <Link
+                                href={`/product/${product.uniq_id}`}
+                                className="mt-auto inline-block px-4 py-2 bg-blue-600 text-white text-center rounded hover:bg-blue-700"
                             >
-                                <CircleX />
-                            </button>
+                                View More
+                            </Link>
                         </div>
                     ))}
                 </div>

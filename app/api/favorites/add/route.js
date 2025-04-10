@@ -1,9 +1,10 @@
-import { createClient } from "../../../../utils/supabase/client";
+import { supabase } from "../../../../lib/supabase";
+const headers = { "Content-Type": "application/json" };
 
 export async function POST(request) {
     try {
-        const supabase = createClient();
-        const { userId, productId, addedAt } = await request.json();
+        const body = await request.json();
+        const { userId, productId, addedAt } = body;
 
         // Validate required fields
         if (!userId || !productId) {
@@ -22,7 +23,7 @@ export async function POST(request) {
             .select("*")
             .eq("user_id", userId)
             .eq("product_id", productId)
-            .single();
+            .maybeSingle();
 
         if (checkError && checkError.code !== "PGRST116") {
             // PGRST116 means no rows found
@@ -70,6 +71,7 @@ export async function POST(request) {
             JSON.stringify({
                 success: true,
                 message: "Product added to favorites",
+                data,
             }),
             { status: 200, headers: { "Content-Type": "application/json" } }
         );

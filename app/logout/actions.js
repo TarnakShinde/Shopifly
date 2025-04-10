@@ -34,7 +34,7 @@ export async function logoutAction() {
         };
     }
 
-    redirect("/");
+    redirect("/login");
 }
 
 export async function logoutActionforDashboard() {

@@ -4,9 +4,9 @@ import { ToastContainer, toast } from "react-toastify";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import bcrypt from "bcryptjs";
-import { createClient } from "../../utils/supabase/client";
-
 const strengthLabels = ["weak", "medium", "medium", "strong"];
+import { supabase } from "../../lib/supabase";
+import "react-toastify/dist/ReactToastify.css"; // Import the CSS for toast notifications
 
 const SignUp = () => {
     const [email, setEmail] = useState("");

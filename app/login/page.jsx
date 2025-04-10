@@ -11,27 +11,10 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const [userRole, setUserRole] = useState(null);
-    const [redirectUrl, setRedirectUrl] = useState(""); // Added state for redirect URL
+    const [userId, setUserId] = useState(null);
     const router = useRouter();
-
-    const handleLogin = async (formData) => {
-        const result = await login(formData);
-
-        if (result?.error) {
-            // Display error toast
-            toast.error(result.error, {
-                position: "top-right",
-                autoClose: 3000,
-                hideProgressBar: true,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                theme: "colored",
-            });
-            setError(result.error);
-        }
-    };
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
@@ -39,33 +22,75 @@ export default function LoginPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
+        setError("");
+
         const formData = new FormData(e.target);
 
-        const result = await login(formData);
+        try {
+            const result = await login(formData);
 
-        if (result.success) {
-            setUserRole(result.userRole); // Set the user role on successful login
-            setRedirectUrl(result.redirectUrl || ""); // Store the redirect URL
-        } else {
-            setError(result.error); // Handle error if login fails
+            if (result.success && result.sessionActive) {
+                // Show success toast
+                toast.success("Login successful!", {
+                    position: "top-right",
+                    autoClose: 2000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    theme: "colored",
+                });
+
+                // Set user data from the result
+                setUserRole(result.userRole);
+                setUserId(result.userId);
+
+                // Store user info in localStorage for client-side access
+                localStorage.setItem(
+                    "shopifly_user",
+                    JSON.stringify({
+                        id: result.userId,
+                        role: result.userRole,
+                    })
+                );
+
+                // Let the toast show before redirecting
+                setTimeout(() => {
+                    if (result.userRole === "admin") {
+                        router.push("/admin/dashboard");
+                    } else {
+                        router.push("/");
+                    }
+                }, 1500);
+            } else {
+                // Display error toast
+                toast.error(result.error || "Login failed", {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    theme: "colored",
+                });
+                setError(result.error || "Login failed");
+            }
+        } catch (err) {
+            toast.error("An unexpected error occurred", {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                theme: "colored",
+            });
+            setError("An unexpected error occurred. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
-
-    // First useEffect can be removed as it's redundant with the second one
-
-    useEffect(() => {
-        if (userRole === "admin") {
-            router.push("/admin/dashboard"); // Redirect to dashboard if admin
-            setTimeout(() => {
-                window.location.href = redirectUrl || "/admin/dashboard";
-            }, 100);
-        } else if (userRole === "user") {
-            router.push("/"); // Redirect to home if not an admin
-            setTimeout(() => {
-                window.location.href = redirectUrl || "/";
-            }, 100);
-        }
-    }, [userRole, router, redirectUrl]); // Added redirectUrl to dependency array
 
     return (
         <div className="min-h-screen">
@@ -151,15 +176,20 @@ export default function LoginPage() {
                         <div>
                             <button
                                 type="submit"
-                                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                disabled={isLoading}
+                                className={`flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+                                    isLoading
+                                        ? "opacity-70 cursor-not-allowed"
+                                        : ""
+                                }`}
                             >
-                                Login
+                                {isLoading ? "Logging in..." : "Login"}
                             </button>
-                            <ToastContainer />
                         </div>
                     </form>
                 </div>
             </div>
+            <ToastContainer />
         </div>
     );
 }

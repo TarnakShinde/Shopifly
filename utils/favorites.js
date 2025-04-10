@@ -1,18 +1,21 @@
-import { createClient } from "./supabase/client";
 import { toast } from "react-toastify";
+import { supabase } from "../lib/supabase";
 
-export const handleAddToFavorites = async (productId, user) => {
-    const supabase = createClient();
-
-    // Check if user is logged in
+function checkAuth(user) {
     if (!user) {
-        // Return a response that indicates auth is required
         return {
             success: false,
             message: "Authentication required",
             requiresAuth: true,
         };
     }
+    return null;
+}
+
+export const handleAddToFavorites = async (productId, user) => {
+    // Check if user is logged in
+    const authError = checkAuth(user);
+    if (authError) return authError;
 
     try {
         // First check if the favorite already exists
@@ -65,15 +68,8 @@ export const handleAddToFavorites = async (productId, user) => {
 // Similarly, add these other functions:
 
 export const handleRemoveFromFavorites = async (productId, user) => {
-    const supabase = createClient();
-
-    if (!user) {
-        return {
-            success: false,
-            message: "Authentication required",
-            requiresAuth: true,
-        };
-    }
+    const authError = checkAuth(user);
+    if (authError) return authError;
 
     try {
         const { data, error } = await supabase
@@ -100,58 +96,90 @@ export const handleRemoveFromFavorites = async (productId, user) => {
     }
 };
 
+// export const getUserLikedProducts = async (user) => {
+//     const authError = checkAuth(user);
+//     if (authError) return authError;
+
+//     try {
+//         // Get favorites
+//         const { data: favorites, error: favoritesError } = await supabase
+//             .from("favorites")
+//             .select("product:product_id(*)")
+//             .eq("user_id", user.id);
+
+//         if (favoritesError) {
+//             console.error("Error fetching favorites:", favoritesError);
+//             return {
+//                 success: false,
+//                 message: "Failed to fetch favorites",
+//                 data: [],
+//             };
+//         }
+
+//         if (!favorites || favorites.length === 0) {
+//             return { success: true, data: [] };
+//         }
+
+//         // Get product details
+//         const productIds = favorites.map((fav) => fav.product_id);
+//         const { data: products, error: productsError } = await supabase
+//             .from("products") // Replace with your actual products table name
+//             .select("*")
+//             .in("uniq_id", productIds);
+
+//         if (productsError) {
+//             console.error("Error fetching products:", productsError);
+//             return {
+//                 success: false,
+//                 message: "Failed to fetch product details",
+//                 data: [],
+//             };
+//         }
+
+//         return { success: true, data: products || [] };
+//     } catch (error) {
+//         console.error("Error fetching liked products:", error);
+//         return { success: false, message: error.message, data: [] };
+//     }
+// };
+
+import { createClient } from "./supabase/client";
+
 export const getUserLikedProducts = async (user) => {
     const supabase = createClient();
 
     if (!user) {
-        return {
-            success: false,
-            message: "Authentication required",
-            requiresAuth: true,
-            data: [],
-        };
+        return { success: false, error: "User not logged in" };
     }
 
     try {
-        // Get favorites
-        const { data: favorites, error: favoritesError } = await supabase
+        const { data, error } = await supabase
             .from("favorites")
             .select("product_id")
             .eq("user_id", user.id);
 
-        if (favoritesError) {
-            console.error("Error fetching favorites:", favoritesError);
-            return {
-                success: false,
-                message: "Failed to fetch favorites",
-                data: [],
-            };
+        if (error) {
+            return { success: false, error };
         }
 
-        if (!favorites || favorites.length === 0) {
+        if (!data || data.length === 0) {
             return { success: true, data: [] };
         }
 
-        // Get product details
-        const productIds = favorites.map((fav) => fav.product_id);
-        const { data: products, error: productsError } = await supabase
-            .from("products") // Replace with your actual products table name
+        const productIds = data.map((fav) => fav.product_id);
+
+        const { data: products, error: productError } = await supabase
+            .from("products")
             .select("*")
             .in("uniq_id", productIds);
 
-        if (productsError) {
-            console.error("Error fetching products:", productsError);
-            return {
-                success: false,
-                message: "Failed to fetch product details",
-                data: [],
-            };
+        if (productError) {
+            return { success: false, error: productError };
         }
 
-        return { success: true, data: products || [] };
-    } catch (error) {
-        console.error("Error fetching liked products:", error);
-        return { success: false, message: error.message, data: [] };
+        return { success: true, data: products };
+    } catch (err) {
+        return { success: false, error: err };
     }
 };
 

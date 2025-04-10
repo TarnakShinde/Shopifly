@@ -19,7 +19,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { createClient } from "../../utils/supabase/client";
-import { logout } from "../../actions/auth";
+import { logoutAction } from "../logout/actions";
 
 const Navbar = () => {
     const notify = (message) =>
@@ -130,7 +130,7 @@ const Navbar = () => {
     const handleLogout = async () => {
         handleClose();
         setIsClick(false);
-        await logout();
+        await logoutAction();
     };
 
     // Menu Items based on user state
